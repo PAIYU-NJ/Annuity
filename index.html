@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>专利年费管理系统</title>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+if (typeof window.supabase === 'undefined') {
+  document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
+}
+</script>
+<script>
+if (typeof window.supabase === 'undefined') {
+  document.write('<script src="https://cdn.bootcdn.net/ajax/libs/supabase-js/2.39.3/supabase.min.js"><\/script>');
+}
+</script>
 <style>
 :root{
   --bg:#f1f5f9; --card:#fff; --border:#e2e8f0; --text:#0f172a; --text2:#64748b;
@@ -22,7 +32,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;font-size:
 input,select,textarea{font-family:inherit;font-size:inherit}
 input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--primary)}
 
-/* ===== 登录界面 ===== */
 #authScreen{position:fixed;inset:0;background:linear-gradient(135deg,#1e3a8a,#2563eb);
   display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
 .auth-card{background:#fff;border-radius:18px;padding:36px 32px;width:100%;max-width:400px;
@@ -48,7 +57,6 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--pr
 .auth-msg.error{display:block;background:var(--danger-bg);color:var(--danger)}
 .auth-msg.success{display:block;background:var(--ok-bg);color:var(--ok)}
 
-/* ===== 主应用 ===== */
 .app{max-width:1440px;margin:0 auto;padding:0 20px 60px;display:none}
 .app.ready{display:block}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 0 16px;flex-wrap:wrap;gap:12px}
@@ -237,7 +245,6 @@ tbody tr:last-child td{border-bottom:none}
 </head>
 <body>
 
-<!-- ========== 登录界面 ========== -->
 <div id="authScreen">
   <div class="auth-card">
     <div class="logo">⚖</div>
@@ -264,7 +271,6 @@ tbody tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- ========== 主应用 ========== -->
 <div class="app" id="app">
   <header class="topbar">
     <div class="brand">
@@ -510,7 +516,6 @@ tbody tr:last-child td{border-bottom:none}
   </section>
 </div>
 
-<!-- ========== 新增/编辑 ========== -->
 <div class="overlay" id="modalPatent">
   <div class="modal">
     <div class="modal-head">
@@ -587,7 +592,6 @@ tbody tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- ========== 详情 ========== -->
 <div class="overlay" id="modalDetail">
   <div class="modal wide">
     <div class="modal-head">
@@ -605,13 +609,20 @@ tbody tr:last-child td{border-bottom:none}
 <datalist id="contactOptions"></datalist>
 
 <script>
-/* =========================================================
-   1. 配置与工具
-   ========================================================= */
 const SUPABASE_URL = 'https://vqbwdrfioxlaaxaeqtxh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxYndkcmZpb3hsYWF4YWVxdHhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMTQ0NDgsImV4cCI6MjEwNTc5MDQ0OH0.JHs2kqc3ydkaT0SFhzxONKM8LcnsNQ2P45zALIihQhY';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+if (typeof window.supabase === 'undefined') {
+  document.getElementById('authSub').innerHTML = '❌ Supabase 库加载失败（三个 CDN 都被拦截）。<br>请把浏览器防追踪关闭，或换用手机浏览器打开。';
+  document.getElementById('authSub').style.color = '#dc2626';
+  document.getElementById('authSub').style.fontWeight = '700';
+  document.getElementById('authSubmit').disabled = true;
+  document.getElementById('authSubmit').style.opacity = '.5';
+} else {
+  window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+const supabase = window.supabaseClient || { auth: { getSession: async()=>({data:{session:null}}), onAuthStateChange: ()=>{}, signOut: async()=>{}, signInWithPassword: async()=>{throw new Error('SDK 未加载')}, signUp: async()=>{throw new Error('SDK 未加载')} }, from: () => ({ select: () => ({ order: async()=>({data:[],error:null}) }) }) };
 
 const DAY_MS = 86400000;
 const FEE_TABLE = {
@@ -653,9 +664,6 @@ function esc(s){
   return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-/* =========================================================
-   2. 年费计算
-   ========================================================= */
 function getBaseFee(type,year){
   const rows=FEE_TABLE[type]; if(!rows) return null;
   for(const [a,b,f] of rows) if(year>=a&&year<=b) return f;
@@ -735,18 +743,12 @@ function statusMeta(it){
 }
 function monitored(){ return state.patents.filter(p=>!p.archived); }
 
-/* =========================================================
-   3. 状态
-   ========================================================= */
 let state = { patents: [], settings: { alertHorizon: 90 }, user: null };
 let editingId = null;
 let ledgerScope = 'active';
 let selectedIds = new Set();
 let scheduleCache = [];
 
-/* =========================================================
-   4. 认证
-   ========================================================= */
 let authMode = 'login';
 
 function showAuthMsg(msg, type){
@@ -765,6 +767,7 @@ function setAuthMode(mode){
   showAuthMsg('');
 }
 async function handleAuth(){
+  if (typeof window.supabase === 'undefined') { showAuthMsg('Supabase 库未加载，请刷新或更换浏览器','error'); return; }
   const email=document.getElementById('authEmail').value.trim();
   const password=document.getElementById('authPassword').value;
   if(!email||!password){ showAuthMsg('请填写邮箱和密码','error'); return; }
@@ -811,9 +814,6 @@ function showApp(user){
   document.getElementById('app').classList.add('ready');
 }
 
-/* =========================================================
-   5. 数据加载
-   ========================================================= */
 async function loadPatents(){
   const { data, error } = await supabase
     .from('patents')
@@ -872,9 +872,6 @@ async function unmarkPaid(patentId, year){
   if(ok){ p.paidYears=years; renderAll(); }
 }
 
-/* =========================================================
-   6. 客户候选
-   ========================================================= */
 function renderClientOptions(){
   const clients=Array.from(new Set(state.patents.map(p=>(p.client||'').trim()).filter(Boolean))).sort();
   const contacts=Array.from(new Set(state.patents.map(p=>(p.contact||'').trim()).filter(Boolean))).sort();
@@ -890,9 +887,6 @@ function renderClientOptions(){
     contacts.map(c=>`<option value="${esc(c)}"></option>`).join('');
 }
 
-/* =========================================================
-   7. 看板
-   ========================================================= */
 function renderDashboard(){
   const today=startOfDay(new Date());
   const list=monitored();
@@ -943,9 +937,6 @@ function renderDashboard(){
   }));
 }
 
-/* =========================================================
-   8. 台账
-   ========================================================= */
 function filterPatents(){
   const q=document.getElementById('ledgerSearch').value.trim().toLowerCase();
   const fClient=document.getElementById('ledgerClient').value;
@@ -1059,9 +1050,6 @@ function clearSelection(){
   document.getElementById('checkAll').indeterminate=false;
 }
 
-/* =========================================================
-   9. 缴费计划
-   ========================================================= */
 function renderSchedule(){
   const today=startOfDay(new Date());
   const range=document.getElementById('scheduleRange').value;
@@ -1106,9 +1094,6 @@ function renderSchedule(){
   }));
 }
 
-/* =========================================================
-   10. 报表
-   ========================================================= */
 function renderReport(){
   const yearSel=document.getElementById('reportYear');
   const today=startOfDay(new Date());
@@ -1143,9 +1128,6 @@ function renderReport(){
     <div style="padding:14px 16px;color:var(--text2);font-size:12.5px">共 ${items.length} 笔 · 涉及 ${new Set(items.map(i=>i.patent.client)).size} 家客户</div></div>`;
 }
 
-/* =========================================================
-   11. 表单与详情
-   ========================================================= */
 function openPatentModal(id){
   editingId=id||null;
   const p=id?state.patents.find(x=>x.id===id):null;
@@ -1266,9 +1248,6 @@ function openDetail(id){
   document.getElementById('modalDetail').classList.add('show');
 }
 
-/* =========================================================
-   12. 批量操作
-   ========================================================= */
 async function bulkArchive(){
   const ids=Array.from(selectedIds); if(!ids.length) return;
   if(!confirm(`确定将选中的 ${ids.length} 件专利移入归档？`)) return;
@@ -1303,9 +1282,6 @@ function bulkExport(){
   exportCSV('选中专利_'+fmtDate(new Date())+'.csv',header,body);
 }
 
-/* =========================================================
-   13. 导入导出
-   ========================================================= */
 function exportJSON(){
   const blob=new Blob([JSON.stringify({patents:state.patents},null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob); const a=document.createElement('a');
@@ -1351,9 +1327,6 @@ function exportCSV(filename,header,rows){
   a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url);
 }
 
-/* =========================================================
-   14. 事件绑定
-   ========================================================= */
 function bindEvents(){
   document.getElementById('authSubmit').addEventListener('click',handleAuth);
   document.getElementById('authToggleLink').addEventListener('click',()=>{
@@ -1464,9 +1437,6 @@ function bindEvents(){
   document.getElementById('btnSavePatent').addEventListener('click',savePatent);
 }
 
-/* =========================================================
-   15. 初始化
-   ========================================================= */
 function renderAll(){
   renderClientOptions();
   renderDashboard();
@@ -1478,6 +1448,10 @@ function renderAll(){
 (async function init(){
   bindEvents();
   setAuthMode('login');
+
+  if (typeof window.supabase === 'undefined') {
+    return;
+  }
 
   const { data: { session } } = await supabase.auth.getSession();
   if(session && session.user){
