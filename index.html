@@ -390,8 +390,12 @@ tbody tr.archived-row{opacity:.62}
         <p><b>发明专利最长 20 年，实用新型最长 10 年，外观设计最长 15 年。</b></p>
         <h4>七、状态与归档</h4>
         <p>状态只有两种：<b>有效</b>、<b>放弃监控</b>。改为「放弃监控」时自动归档。</p>
-        <h4>八、导入导出格式</h4>
+        <h4>八、导入导出与去重规则</h4>
         <p>支持 <b>Excel（.xlsx / .xls）</b> 和 CSV 两种格式。</p>
+        <p><b>申请号唯一：</b>导入时系统按<b>申请号</b>匹配已有记录，<b>存在则覆盖，不存在则新增</b>。同一个申请号不会产生重复记录。</p>
+        <p><b>已缴年度取大值：</b>覆盖时已缴年度取<b>新旧较大值</b>，不会因导入旧数据而倒退。</p>
+        <p>其他字段（专利名称、类型、客户、申请日、费减、状态、备注）以导入数据为准直接覆盖。</p>
+        <p>导入完成后会弹出详细报告，列出每一条被覆盖记录的变化字段。</p>
         <p><b>申请日</b>严格只接受以下 8 种格式（封闭，不扩展）：</p>
         <ul>
           <li><code>20260524</code>（8 位纯数字）</li>
@@ -403,7 +407,7 @@ tbody tr.archived-row{opacity:.62}
           <li><code>2026.5.24</code>（点号 + 一位或两位月日）</li>
           <li><code>2026年5月25日</code>（中文年月日，必须齐全）</li>
         </ul>
-        <p>Excel 单元格常见带时间戳格式（如 <code>2019-05-20 00:00:00</code>）会被自动剥离时间部分后校验。非法日期一律拒绝，不自动修正。</p>
+        <p>Excel 单元格带时间戳格式（如 <code>2019-05-20 00:00:00</code>）会剥离时间部分后校验。非法日期一律拒绝，不自动修正。</p>
         <h4>九、年费标准（人民币元）</h4>
         <table style="margin-top:8px;font-size:14px">
           <thead><tr><th>类型</th><th>年度区间</th><th>每年标准</th></tr></thead>
@@ -512,22 +516,6 @@ var FEE_TABLE = {
 var TYPE_BADGE = { '发明':'blue', '实用新型':'cyan', '外观设计':'purple' };
 var REDUCTION_YEARS = 10;
 
-/* =========================================================
-   申请日解析 —— 严格封闭，只接受以下 8 种格式，不扩展：
-   1. 20260524       8 位纯数字
-   2. 2026-05-24     横杠 + 两位月/日
-   3. 2026-5-24      横杠 + 一位或两位月/日
-   4. 2026/05/24     斜杠 + 两位月/日
-   5. 2026/5/24      斜杠 + 一位或两位月/日
-   6. 2026.05.24     点号 + 两位月/日
-   7. 2026.5.24      点号 + 一位或两位月/日
-   8. 2026年5月25日  中文年月日（年月日必须齐全）
-   特别处理：
-   - Excel 单元格带时间戳格式（如 "2019-05-20 00:00:00"）会剥离时间部分后校验
-   - Excel 日期单元格（Date 对象）直接取年月日
-   - 非法日期（如 20260230、20261301、2026-02-29）一律返回 null，绝不自动修正
-   - 年份限 1900–2200
-   ========================================================= */
 function isValidYMD(y, mo, d){
   if(y < 1900 || y > 2200) return false;
   if(mo < 1 || mo > 12) return false;
@@ -543,48 +531,38 @@ function parseDate(s){
   }
   var str = String(s).replace(/[\t\r\n]/g,'').trim();
   if(!str) return null;
-
-  // 剥离时间戳：如 "2019-05-20 00:00:00" → "2019-05-20"
   var dateOnly = str.split(/[\sT]+/)[0];
   if(!dateOnly) return null;
-
   var y, mo, d, m;
-
-  // 格式 1：8 位纯数字 20260524
   if(/^\d{8}$/.test(dateOnly)){
     y = +dateOnly.slice(0,4); mo = +dateOnly.slice(4,6); d = +dateOnly.slice(6,8);
     if(isValidYMD(y, mo, d)) return new Date(y, mo-1, d);
     return null;
   }
-  // 格式 2/3：横杠 2026-05-24 或 2026-5-24
   m = dateOnly.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if(m){
     y = +m[1]; mo = +m[2]; d = +m[3];
     if(isValidYMD(y, mo, d)) return new Date(y, mo-1, d);
     return null;
   }
-  // 格式 4/5：斜杠 2026/05/24 或 2026/5/24
   m = dateOnly.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
   if(m){
     y = +m[1]; mo = +m[2]; d = +m[3];
     if(isValidYMD(y, mo, d)) return new Date(y, mo-1, d);
     return null;
   }
-  // 格式 6/7：点号 2026.05.24 或 2026.5.24
   m = dateOnly.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})$/);
   if(m){
     y = +m[1]; mo = +m[2]; d = +m[3];
     if(isValidYMD(y, mo, d)) return new Date(y, mo-1, d);
     return null;
   }
-  // 格式 8：中文 2026年5月25日（年月日必须齐全）
   m = dateOnly.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日$/);
   if(m){
     y = +m[1]; mo = +m[2]; d = +m[3];
     if(isValidYMD(y, mo, d)) return new Date(y, mo-1, d);
     return null;
   }
-  // 其他格式一律拒绝
   return null;
 }
 function fmtDate(d){
@@ -1294,7 +1272,6 @@ function normalizeDate(s){
   var d = parseDate(s);
   return d ? fmtDate(d) : '';
 }
-/* 费减比例归一化：兼容 0.85 和 85 两种写法 */
 function normalizeReduction(v){
   var n = Number(v);
   if(isNaN(n) || n < 0) return 0;
@@ -1358,6 +1335,12 @@ function downloadTemplate(){
   XLSX.utils.book_append_sheet(wb, ws, '专利导入模板');
   XLSX.writeFile(wb, '专利导入模板.xlsx');
 }
+
+/* 申请号归一化：去空格、转大写，用于匹配 */
+function normAppNo(s){
+  return String(s == null ? '' : s).replace(/\s+/g,'').toUpperCase();
+}
+
 async function processImportRows(rows){
   if(rows.length < 2){ alert('文件内容为空或格式不对（至少需要表头+一行数据）'); return; }
   var header = rows[0].map(function(h){ return String(h == null ? '' : h).trim(); });
@@ -1378,8 +1361,11 @@ async function processImportRows(rows){
   if(!items.length){ alert('没有可导入的数据'); return; }
   if(!confirm('即将导入 ' + items.length + ' 条数据，确定吗？')) return;
 
-  var ok = 0, fail = 0, firstErr = '';
+  var newCount = 0, updateCount = 0, unchangedCount = 0, fail = 0;
+  var firstErr = '';
   var invalidDates = [];
+  var updateDetails = [];
+
   for(var k = 0; k < items.length; k++){
     var it = items[k];
     var nm = String(it.name || '').trim();
@@ -1394,40 +1380,176 @@ async function processImportRows(rows){
       if(invalidDates.length < 5) invalidDates.push(nm + ' (申请日: "' + dtRaw + '")');
       continue;
     }
+
     var paidRaw = it.paidYear != null ? it.paidYear : (it.paid_year != null ? it.paid_year : '');
     var paidY = Number(paidRaw) || 0;
     var reduction = normalizeReduction(it.reduction);
     var st = normalizeStatus(it.status);
-    var archived = (st === '放弃监控');
-    var row2 = {
-      id: it.id || ('P' + Date.now() + Math.random().toString(36).slice(2,7) + k),
-      user_id: state.user.id,
-      name: nm,
-      app_no: no,
-      app_date: fmtDate(parsed),
-      type: it.type || '发明',
-      client: cl,
-      reduction: reduction,
-      status: st,
-      archived: archived,
-      archived_at: archived ? fmtDate(new Date()) : '',
-      paid_year: paidY,
-      notes: String(it.notes || ''),
-      paid_years: []
-    };
-    var res = await sb.from('patents').upsert(row2, {onConflict:'id'});
-    if(res.error){ fail++; if(!firstErr) firstErr = res.error.message; }
-    else ok++;
+    var newType = it.type || '发明';
+    var newNotes = String(it.notes || '');
+    var newAppDate = fmtDate(parsed);
+
+    // === 按申请号匹配已有记录 ===
+    var normNo = normAppNo(no);
+    var existing = null;
+    for(var ei = 0; ei < state.patents.length; ei++){
+      if(normAppNo(state.patents[ei].appNo) === normNo){
+        existing = state.patents[ei];
+        break;
+      }
+    }
+
+    var id, changes = [];
+    var finalPaidY = paidY;
+    var finalArchivedAt = '';
+
+    if(existing){
+      // 覆盖模式：保留原 id，逐字段比对
+      id = existing.id;
+
+      if((existing.name||'') !== nm) changes.push({field:'专利名称', old:existing.name||'（空）', new_:nm});
+      if((existing.type||'') !== newType) changes.push({field:'专利类型', old:existing.type||'（空）', new_:newType});
+      if((existing.appDate||'') !== newAppDate) changes.push({field:'申请日', old:existing.appDate||'（空）', new_:newAppDate});
+      if((existing.client||'') !== cl) changes.push({field:'客户', old:existing.client||'（空）', new_:cl});
+      if((Number(existing.reduction)||0) !== reduction) changes.push({field:'费减比例', old:(Number(existing.reduction)||0)+'%', new_:reduction+'%'});
+      if((existing.status||'有效') !== st) changes.push({field:'状态', old:existing.status||'有效', new_:st});
+      if((existing.notes||'') !== newNotes) changes.push({field:'备注', old:(existing.notes||'（空）').slice(0,30), new_:(newNotes||'（空）').slice(0,30)});
+
+      // 已缴年度取较大值
+      var oldPaid = Number(existing.paidYear) || 0;
+      finalPaidY = Math.max(oldPaid, paidY);
+      if(oldPaid !== finalPaidY){
+        changes.push({field:'已缴年度', old:String(oldPaid), new_:String(finalPaidY) + '（取较大值）'});
+      }
+
+      // 归档状态：如果新旧都要求归档，保留原归档时间；否则按新状态
+      var archived = (st === '放弃监控');
+      if(archived && existing.archived && existing.archivedAt){
+        finalArchivedAt = existing.archivedAt;
+      } else if(archived){
+        finalArchivedAt = fmtDate(new Date());
+      } else {
+        finalArchivedAt = '';
+      }
+
+      var row2 = {
+        id: id,
+        user_id: state.user.id,
+        name: nm,
+        app_no: no,
+        app_date: newAppDate,
+        type: newType,
+        client: cl,
+        reduction: reduction,
+        status: st,
+        archived: archived,
+        archived_at: finalArchivedAt,
+        paid_year: finalPaidY,
+        notes: newNotes,
+        paid_years: []
+      };
+      var res = await sb.from('patents').upsert(row2, {onConflict:'id'});
+      if(res.error){ fail++; if(!firstErr) firstErr = res.error.message; continue; }
+
+      // 同步本地 state，防止同一文件后续条目匹配失败
+      existing.name = nm;
+      existing.appNo = no;
+      existing.appDate = newAppDate;
+      existing.type = newType;
+      existing.client = cl;
+      existing.reduction = reduction;
+      existing.status = st;
+      existing.archived = archived;
+      existing.archivedAt = finalArchivedAt;
+      existing.paidYear = finalPaidY;
+      existing.notes = newNotes;
+
+      if(changes.length > 0){
+        updateCount++;
+        updateDetails.push({name: nm, appNo: no, changes: changes});
+      } else {
+        unchangedCount++;
+      }
+    } else {
+      // 新增
+      id = it.id || ('P' + Date.now() + Math.random().toString(36).slice(2,7) + k);
+      var archived2 = (st === '放弃监控');
+      var row3 = {
+        id: id,
+        user_id: state.user.id,
+        name: nm,
+        app_no: no,
+        app_date: newAppDate,
+        type: newType,
+        client: cl,
+        reduction: reduction,
+        status: st,
+        archived: archived2,
+        archived_at: archived2 ? fmtDate(new Date()) : '',
+        paid_year: paidY,
+        notes: newNotes,
+        paid_years: []
+      };
+      var res2 = await sb.from('patents').upsert(row3, {onConflict:'id'});
+      if(res2.error){ fail++; if(!firstErr) firstErr = res2.error.message; continue; }
+      newCount++;
+
+      // 同步本地 state
+      state.patents.push({
+        id: id,
+        name: nm,
+        appNo: no,
+        appDate: newAppDate,
+        type: newType,
+        client: cl,
+        reduction: reduction,
+        status: st,
+        archived: archived2,
+        archivedAt: archived2 ? fmtDate(new Date()) : '',
+        paidYear: paidY,
+        notes: newNotes,
+        paidYears: []
+      });
+    }
   }
+
   await loadPatents();
   renderAll();
-  var msg = '导入完成：成功 ' + ok + ' 条';
-  if(fail > 0) msg += '，失败 ' + fail + ' 条';
+
+  // === 组织提示信息 ===
+  var lines = [];
+  lines.push('导入完成');
+  lines.push('───────────────');
+  lines.push('· 新增：' + newCount + ' 条');
+  lines.push('· 覆盖更新：' + updateCount + ' 条');
+  if(unchangedCount > 0) lines.push('· 无变化（跳过）：' + unchangedCount + ' 条');
+  if(fail > 0) lines.push('· 失败：' + fail + ' 条');
   if(invalidDates.length){
-    msg += '\n\n申请日无法识别的记录（前 ' + invalidDates.length + ' 条）：\n' + invalidDates.join('\n');
+    lines.push('');
+    lines.push('⚠ 申请日无法识别的记录（前 ' + invalidDates.length + ' 条）：');
+    invalidDates.forEach(function(s){ lines.push('  · ' + s); });
   }
-  if(firstErr) msg += '\n\n首个错误：' + firstErr;
-  alert(msg);
+  if(firstErr){
+    lines.push('');
+    lines.push('首个错误：' + firstErr);
+  }
+  if(updateDetails.length > 0){
+    lines.push('');
+    lines.push('━━━ 覆盖详情 ━━━');
+    var showMax = Math.min(updateDetails.length, 20);
+    for(var ui = 0; ui < showMax; ui++){
+      var u = updateDetails[ui];
+      lines.push((ui+1) + '. ' + u.name + ' (' + u.appNo + ')');
+      u.changes.forEach(function(ch){
+        lines.push('   · ' + ch.field + '：' + ch.old + '  →  ' + ch.new_);
+      });
+    }
+    if(updateDetails.length > showMax){
+      lines.push('');
+      lines.push('（还有 ' + (updateDetails.length - showMax) + ' 条覆盖未显示，详情请查看台账或刷新页面核对）');
+    }
+  }
+  alert(lines.join('\n'));
 }
 function importFile(file){
   var fname = file.name.toLowerCase();
