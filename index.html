@@ -302,7 +302,7 @@ tbody tr.archived-row{opacity:.62}
           <thead>
             <tr class="group-row">
               <th colspan="2" class="g-act" style="background:#fff;color:#94a3b8">选择</th>
-              <th colspan="6" class="g-basic">📌 基本信息</th>
+              <th colspan="7" class="g-basic">📌 基本信息</th>
               <th colspan="3" class="g-todo">🔔 待办提醒</th>
               <th colspan="2" class="g-hist">📜 历史情况</th>
               <th class="g-act">操作</th>
@@ -315,6 +315,7 @@ tbody tr.archived-row{opacity:.62}
               <th class="c-basic">专利类型</th>
               <th class="c-basic">客户</th>
               <th class="c-basic">申请日</th>
+              <th class="c-basic">授权日</th>
               <th class="c-basic">费减比例</th>
               <th class="c-todo first">应缴年度</th>
               <th class="c-todo">截止日</th>
@@ -382,8 +383,20 @@ tbody tr.archived-row{opacity:.62}
         <div class="note">⚠️ 系统按"逾期满月数 × 5%"自动计算，1 个月内为 0，第 6 个月为 25%。实际金额以国家知识产权局缴费通知为准。</div>
         <h4>四、费减政策</h4>
         <p>符合条件的小微企业可减缴 <b>70%</b>，个人可减缴 <b>85%</b>。</p>
-        <p><b>费减覆盖范围为自申请日起算的前 10 个专利年度</b>。</p>
-        <p>Excel 中"费减比例"一列，<b>既可以填 85 也可填 0.85</b>，系统会自动识别。</p>
+        <p><b>减免覆盖范围为：自授权当年起 10 个专利年度。</b></p>
+        <div class="note">
+          <b>示例：</b>申请日 2016-09-27，授权日 2019-01-08，减免 85%<br>
+          · 授权日落在第 3 专利年度（2018-09-27 ~ 2019-09-26）<br>
+          · 减免覆盖：第 3、4、5、6、7、8、9、10、11、12 年度（共 10 个年度）<br>
+          · 第 3 年度年费 = 900 × 15% = <b>135 元</b><br>
+          · 第 13 年度起恢复标准费率
+        </div>
+        <p><b>授权日的作用：</b></p>
+        <ul>
+          <li><b>授权日已填写</b> + 减免比例 &gt; 0 → 自授权当年起 10 个年度享受减免</li>
+          <li><b>授权日已填写</b> + 减免比例 = 0 → 不享受减免（正常按标准费率）</li>
+          <li><b>授权日为空</b> → 默认不享受减免（无论减免比例填了什么）</li>
+        </ul>
         <h4>五、已缴年度</h4>
         <p><b>已缴年度 = 最后一次缴过年费的最高年度</b>。系统自动计算 <b>应缴年度 = 已缴年度 + 1</b>。</p>
         <h4>六、保护年限上限</h4>
@@ -392,11 +405,23 @@ tbody tr.archived-row{opacity:.62}
         <p>状态只有两种：<b>有效</b>、<b>放弃监控</b>。改为「放弃监控」时自动归档。</p>
         <h4>八、导入导出与去重规则</h4>
         <p>支持 <b>Excel（.xlsx / .xls）</b> 和 CSV 两种格式。</p>
-        <p><b>申请号唯一：</b>导入时系统按<b>申请号</b>匹配已有记录，<b>存在则覆盖，不存在则新增</b>。同一个申请号不会产生重复记录。</p>
+        <p><b>模板与导出的列顺序（与线下管理表单对接）：</b></p>
+        <ul>
+          <li>专利名称</li>
+          <li>申请日</li>
+          <li>申请号</li>
+          <li>专利类型</li>
+          <li>客户</li>
+          <li>授权日</li>
+          <li>费减比例</li>
+          <li>已缴年度</li>
+          <li>备注</li>
+        </ul>
+        <p>导入时系统按<b>表头名称识别</b>，不要求列顺序，任意顺序均可。可选列：状态（有效/放弃监控）。</p>
+        <p><b>申请号唯一：</b>导入时系统按<b>申请号</b>匹配已有记录，<b>存在则覆盖，不存在则新增</b>。</p>
         <p><b>已缴年度取大值：</b>覆盖时已缴年度取<b>新旧较大值</b>，不会因导入旧数据而倒退。</p>
-        <p>其他字段（专利名称、类型、客户、申请日、费减、状态、备注）以导入数据为准直接覆盖。</p>
-        <p>导入完成后会弹出详细报告，列出每一条被覆盖记录的变化字段。</p>
-        <p><b>申请日</b>严格只接受以下 8 种格式（封闭，不扩展）：</p>
+        <p>其他字段以导入数据为准直接覆盖。导入完成后会弹出详细报告，列出每一条被覆盖记录的变化字段。</p>
+        <p><b>申请日、授权日</b>严格只接受以下 8 种格式（封闭，不扩展）：</p>
         <ul>
           <li><code>20260524</code>（8 位纯数字）</li>
           <li><code>2026-05-24</code>（横杠 + 两位月日）</li>
@@ -447,6 +472,9 @@ tbody tr.archived-row{opacity:.62}
         <select id="f_type"><option>发明</option><option>实用新型</option><option>外观设计</option></select></div>
       <div class="field"><label>申请日 <span class="req">*</span></label>
         <input type="date" id="f_appDate"></div>
+      <div class="field"><label>授权日</label>
+        <input type="date" id="f_grantDate">
+        <span class="hint">享受费减的专利必须填写；不享受费减可留空</span></div>
       <div class="field full"><label>申请人 / 客户 <span class="req">*</span></label>
         <input type="text" id="f_client" list="clientOptions" autocomplete="off"
                placeholder="选择已有或输入新客户">
@@ -454,7 +482,7 @@ tbody tr.archived-row{opacity:.62}
       <div class="field"><label>费减比例</label>
         <select id="f_reduction"><option value="0">不减缴</option>
           <option value="70">减缴 70%</option><option value="85">减缴 85%</option></select>
-        <span class="hint">减免申请日起前 10 个年度</span></div>
+        <span class="hint">自授权当年起 10 个年度</span></div>
       <div class="field"><label>状态</label>
         <select id="f_status"><option>有效</option><option>放弃监控</option></select></div>
       <div class="field"><label>已缴年度</label>
@@ -599,12 +627,30 @@ function getBaseFee(type,year){
   return null;
 }
 function maxYear(type){ var r=FEE_TABLE[type]; return r?r[r.length-1][1]:20; }
+function yearOf(appDate, date){
+  if(date < appDate) return 0;
+  var n = 1;
+  while(addYears(appDate, n) <= date) n++;
+  return n;
+}
+function grantYearOf(p){
+  if(!p.grantDate) return null;
+  var appDate = parseDate(p.appDate);
+  var grantDate = parseDate(p.grantDate);
+  if(!appDate || !grantDate) return null;
+  return yearOf(appDate, grantDate);
+}
 function feeForYear(p, n){
-  var base=getBaseFee(p.type,n);
-  if(base==null) return null;
-  var reduction=Number(p.reduction)||0;
-  var applyRed=0;
-  if(reduction>0 && n<=REDUCTION_YEARS) applyRed=reduction;
+  var base = getBaseFee(p.type, n);
+  if(base == null) return null;
+  var reduction = Number(p.reduction) || 0;
+  var applyRed = 0;
+  if(reduction > 0){
+    var gy = grantYearOf(p);
+    if(gy != null && n >= gy && n <= gy + REDUCTION_YEARS - 1){
+      applyRed = reduction;
+    }
+  }
   return {base:base, reduction:applyRed, fee:Math.round(base*(1-applyRed/100))};
 }
 function paidYear(p){
@@ -720,7 +766,7 @@ async function loadPatents(){
   if(res.error){ console.error('加载失败',res.error); return false; }
   state.patents=(res.data||[]).map(function(row){
     return {id:row.id, name:row.name, appNo:row.app_no, appDate:row.app_date,
-      type:row.type, client:row.client,
+      grantDate:row.grant_date||'', type:row.type, client:row.client,
       reduction:row.reduction, status:row.status, archived:row.archived,
       archivedAt:row.archived_at, paidYear:row.paid_year||0,
       notes:row.notes, paidYears:row.paid_years||[]};
@@ -729,7 +775,7 @@ async function loadPatents(){
 }
 async function upsertPatent(p){
   var row={id:p.id, user_id:state.user.id, name:p.name, app_no:p.appNo,
-    app_date:p.appDate, type:p.type, client:p.client,
+    app_date:p.appDate, grant_date:p.grantDate||'', type:p.type, client:p.client,
     reduction:p.reduction||0, status:p.status||'有效', archived:!!p.archived,
     archived_at:p.archivedAt||'', paid_year:p.paidYear||0,
     notes:p.notes||'', paid_years:[]};
@@ -867,7 +913,7 @@ function renderLedger(){
   Array.from(selectedIds).forEach(function(id){ if(!visible.has(id)) selectedIds.delete(id); });
   var tbody=document.getElementById('ledgerBody');
   if(!rows.length){
-    tbody.innerHTML='<tr><td colspan="14"><div class="empty"><span class="icon">📭</span>没有符合条件的记录</div></td></tr>';
+    tbody.innerHTML='<tr><td colspan="15"><div class="empty"><span class="icon">📭</span>没有符合条件的记录</div></td></tr>';
     updateBulkBar(); syncCheckAll(); return;
   }
   tbody.innerHTML=rows.map(function(r,i){
@@ -895,6 +941,7 @@ function renderLedger(){
       '<td class="td-basic"><span class="badge '+(TYPE_BADGE[p.type]||'gray')+'">'+esc(p.type)+'</span></td>'+
       '<td class="td-basic"><div class="truncate" title="'+esc(p.client)+'">'+esc(p.client)+'</div></td>'+
       '<td class="mono td-basic">'+esc(p.appDate)+'</td>'+
+      '<td class="mono td-basic">'+esc(p.grantDate||'—')+'</td>'+
       '<td class="td-basic">'+red+'</td>'+
       '<td class="mono td-todo first">'+nextYearStr+'</td>'+
       '<td class="mono td-todo">'+nextDate+'</td>'+
@@ -1055,6 +1102,7 @@ function openPatentModal(id){
   document.getElementById('f_appNo').value=p?p.appNo:'';
   document.getElementById('f_type').value=p?p.type:'发明';
   document.getElementById('f_appDate').value=p?p.appDate:'';
+  document.getElementById('f_grantDate').value=p?(p.grantDate||''):'';
   document.getElementById('f_client').value=p?p.client:'';
   document.getElementById('f_reduction').value=p?String(p.reduction||0):'0';
   document.getElementById('f_status').value=p?(p.status||'有效'):'有效';
@@ -1067,20 +1115,25 @@ async function savePatent(){
   var name=document.getElementById('f_name').value.trim();
   var appNo=document.getElementById('f_appNo').value.trim();
   var appDate=document.getElementById('f_appDate').value;
+  var grantDate=document.getElementById('f_grantDate').value||'';
   var client=document.getElementById('f_client').value.trim();
   if(!name) return alert('请填写专利名称');
   if(!appNo) return alert('请填写申请号');
   if(!appDate) return alert('请填写申请日');
   if(!client) return alert('请填写客户');
+  var reduction=Number(document.getElementById('f_reduction').value)||0;
+  if(reduction>0 && !grantDate){
+    if(!confirm('该专利设置了费减比例，但未填写授权日。\n\n按规则，未填写授权日视为不享受减免，年费将按标准费率计算。\n\n确定要这样保存吗？')) return;
+  }
   var status=document.getElementById('f_status').value;
   var paidY=Number(document.getElementById('f_paidYear').value)||0;
   var archived = (status === '放弃监控');
   var data={
     id: editingId || ('P'+Date.now()+Math.random().toString(36).slice(2,7)),
-    name:name, appNo:appNo, appDate:appDate,
+    name:name, appNo:appNo, appDate:appDate, grantDate:grantDate,
     type:document.getElementById('f_type').value,
     client:client,
-    reduction:Number(document.getElementById('f_reduction').value)||0,
+    reduction:reduction,
     status: status,
     archived: archived, archivedAt: archived?fmtDate(new Date()):'',
     paidYear: paidY,
@@ -1113,12 +1166,23 @@ function openDetail(id){
   var appDate=parseDate(p.appDate);
   var max=maxYear(p.type);
   var currentPaid=paidYear(p);
+  var gy=grantYearOf(p);
 
   document.getElementById('detailTitle').textContent=p.name;
 
+  var reductionText = '不减缴';
+  if(p.reduction > 0){
+    if(gy != null){
+      reductionText = '减缴 '+p.reduction+'%（自第 '+gy+' 年度起 10 个年度，即第 '+gy+'–'+(gy+REDUCTION_YEARS-1)+' 年度）';
+    } else {
+      reductionText = '减缴 '+p.reduction+'%（未填授权日，视为不享受减免）';
+    }
+  }
+
   var info='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:22px">'+
     [['申请号',p.appNo],['类型',p.type],['申请日',p.appDate],
-     ['客户',p.client],['费减',p.reduction>0?'减缴 '+p.reduction+'%（前 10 年）':'不减缴'],
+     ['授权日',p.grantDate||'（空）'],
+     ['客户',p.client],['费减',reductionText],
      ['已缴年度','第 '+currentPaid+' 年'],
      ['状态',p.status||'有效'],['监控',p.archived?'已归档':'监控中']
     ].map(function(kv){
@@ -1143,9 +1207,14 @@ function openDetail(id){
       var tag = paid ? '<span class="badge green">已缴</span>' : isNext ?
         (late&&late.months>0?'<span class="badge red">逾期 '+late.months+' 月</span>':'<span class="badge blue">待缴</span>')
         : '<span class="badge gray">—</span>';
+      var isGrantYear = (gy === n);
+      var inReductionRange = (gy != null && p.reduction > 0 && n >= gy && n <= gy + REDUCTION_YEARS - 1);
       var feeTxt = f.reduction>0 ? '¥'+money(f.fee)+' <span style="font-size:13px;color:#64748b">(标价 ¥'+money(f.base)+'，减 '+f.reduction+'%)</span>' : '¥'+money(f.fee);
       lines.push('<div class="tl-item '+cls+'"><div class="row">'+
-        '<div><div class="y">第 '+n+' 年度 '+(n<=REDUCTION_YEARS&&p.reduction>0?'<span class="badge amber" style="font-size:11px">费减覆盖</span>':'')+'</div>'+
+        '<div><div class="y">第 '+n+' 年度 '+
+          (isGrantYear?'<span class="badge blue" style="font-size:11px">授权当年</span> ':'')+
+          (inReductionRange?'<span class="badge amber" style="font-size:11px">费减覆盖</span>':'')+
+        '</div>'+
         '<div class="d">'+fmtDate(start)+' ~ '+fmtDate(end)+' · 截止 '+fmtDate(due)+'</div></div>'+
         '<div style="text-align:right"><div class="f">'+feeTxt+'</div><div style="margin-top:4px">'+tag+'</div></div></div>'+
         '<div style="margin-top:8px">'+
@@ -1247,10 +1316,10 @@ async function confirmBulkPaid(){
 function bulkExport(){
   var rows=state.patents.filter(function(p){return selectedIds.has(p.id);});
   if(!rows.length) return;
-  var header=['专利名称','申请号','专利类型','申请日','客户','费减比例','状态','已缴年度','备注'];
+  var header=['专利名称','申请日','申请号','专利类型','客户','授权日','费减比例','已缴年度','备注'];
   var data=[header].concat(rows.map(function(p){
-    return [p.name, p.appNo, p.type, p.appDate,
-      p.client, p.reduction||0, p.status||'有效',
+    return [p.name, p.appDate, p.appNo, p.type,
+      p.client, p.grantDate||'', p.reduction||0,
       paidYear(p), p.notes||''];
   }));
   exportXLSX('选中专利_'+fmtDate(new Date())+'.xlsx', data, '选中专利');
@@ -1261,6 +1330,7 @@ var HEADER_MAP = {
   '申请号':'appNo','申请编号':'appNo',
   '专利类型':'type','类型':'type',
   '申请日':'appDate','申请日期':'appDate',
+  '授权日':'grantDate','授权日期':'grantDate',
   '客户':'client','申请人':'client','申请人/客户':'client','申请人 / 客户':'client',
   '费减比例':'reduction','减免':'reduction','费减':'reduction',
   '状态':'status','法律状态':'status',
@@ -1308,27 +1378,33 @@ function parseCSV(text){
   if(field !== '' || cur.length){ cur.push(field); rows.push(cur); }
   return rows;
 }
-var COL_HEADERS = ['专利名称','申请号','专利类型','申请日','客户','费减比例','状态','已缴年度','备注'];
-var COL_WIDTHS = [{wch:40},{wch:20},{wch:12},{wch:14},{wch:36},{wch:12},{wch:12},{wch:12},{wch:36}];
+
+/* =========================================================
+   模板 / 导出的列顺序（与线下内部管理表单对接）
+   专利名称 | 申请日 | 申请号 | 专利类型 | 客户 | 授权日 | 费减比例 | 已缴年度 | 备注
+   ========================================================= */
+var COL_HEADERS = ['专利名称','申请日','申请号','专利类型','客户','授权日','费减比例','已缴年度','备注'];
+var COL_WIDTHS = [{wch:40},{wch:14},{wch:20},{wch:12},{wch:36},{wch:14},{wch:12},{wch:12},{wch:36}];
 
 function downloadTemplate(){
   if(!xlsxOK){ alert('Excel 库加载失败，请刷新页面重试'); return; }
   var example = [
     '【示例】一种图像处理方法（导入前请删除本行）',
-    '2023104073316',
+    '2016-09-27',
+    '2016108575241',
     '发明',
-    '2023-04-14',
     '北方夜视科技（南京）研究院有限公司',
+    '2019-01-08',
     85,
-    '有效',
-    3,
+    11,
     ''
   ];
   var ws = XLSX.utils.aoa_to_sheet([COL_HEADERS, example]);
   ws['!cols'] = COL_WIDTHS;
   var range = XLSX.utils.decode_range(ws['!ref']);
+  /* 申请号在第 3 列（index 2），设为文本格式 */
   for(var R = range.s.r; R <= range.e.r; R++){
-    var cellAddr = XLSX.utils.encode_cell({r:R, c:1});
+    var cellAddr = XLSX.utils.encode_cell({r:R, c:2});
     if(ws[cellAddr]) ws[cellAddr].t = 's';
   }
   var wb = XLSX.utils.book_new();
@@ -1336,7 +1412,6 @@ function downloadTemplate(){
   XLSX.writeFile(wb, '专利导入模板.xlsx');
 }
 
-/* 申请号归一化：去空格、转大写，用于匹配 */
 function normAppNo(s){
   return String(s == null ? '' : s).replace(/\s+/g,'').toUpperCase();
 }
@@ -1364,6 +1439,8 @@ async function processImportRows(rows){
   var newCount = 0, updateCount = 0, unchangedCount = 0, fail = 0;
   var firstErr = '';
   var invalidDates = [];
+  var invalidGrantDates = [];
+  var reductionWithoutGrant = [];
   var updateDetails = [];
 
   for(var k = 0; k < items.length; k++){
@@ -1380,16 +1457,28 @@ async function processImportRows(rows){
       if(invalidDates.length < 5) invalidDates.push(nm + ' (申请日: "' + dtRaw + '")');
       continue;
     }
-
+    var grantRaw = it.grantDate != null ? it.grantDate : (it.grant_date != null ? it.grant_date : '');
+    var grantStr = '';
+    if(grantRaw !== '' && grantRaw != null){
+      var grantParsed = parseDate(grantRaw);
+      if(grantParsed){
+        grantStr = fmtDate(grantParsed);
+      } else {
+        if(invalidGrantDates.length < 5) invalidGrantDates.push(nm + ' (授权日: "' + grantRaw + '")');
+        grantStr = '';
+      }
+    }
     var paidRaw = it.paidYear != null ? it.paidYear : (it.paid_year != null ? it.paid_year : '');
     var paidY = Number(paidRaw) || 0;
     var reduction = normalizeReduction(it.reduction);
+    if(reduction > 0 && !grantStr){
+      reductionWithoutGrant.push(nm);
+    }
     var st = normalizeStatus(it.status);
     var newType = it.type || '发明';
     var newNotes = String(it.notes || '');
     var newAppDate = fmtDate(parsed);
 
-    // === 按申请号匹配已有记录 ===
     var normNo = normAppNo(no);
     var existing = null;
     for(var ei = 0; ei < state.patents.length; ei++){
@@ -1404,25 +1493,23 @@ async function processImportRows(rows){
     var finalArchivedAt = '';
 
     if(existing){
-      // 覆盖模式：保留原 id，逐字段比对
       id = existing.id;
 
       if((existing.name||'') !== nm) changes.push({field:'专利名称', old:existing.name||'（空）', new_:nm});
       if((existing.type||'') !== newType) changes.push({field:'专利类型', old:existing.type||'（空）', new_:newType});
       if((existing.appDate||'') !== newAppDate) changes.push({field:'申请日', old:existing.appDate||'（空）', new_:newAppDate});
+      if((existing.grantDate||'') !== grantStr) changes.push({field:'授权日', old:existing.grantDate||'（空）', new_:grantStr||'（空）'});
       if((existing.client||'') !== cl) changes.push({field:'客户', old:existing.client||'（空）', new_:cl});
       if((Number(existing.reduction)||0) !== reduction) changes.push({field:'费减比例', old:(Number(existing.reduction)||0)+'%', new_:reduction+'%'});
       if((existing.status||'有效') !== st) changes.push({field:'状态', old:existing.status||'有效', new_:st});
       if((existing.notes||'') !== newNotes) changes.push({field:'备注', old:(existing.notes||'（空）').slice(0,30), new_:(newNotes||'（空）').slice(0,30)});
 
-      // 已缴年度取较大值
       var oldPaid = Number(existing.paidYear) || 0;
       finalPaidY = Math.max(oldPaid, paidY);
       if(oldPaid !== finalPaidY){
         changes.push({field:'已缴年度', old:String(oldPaid), new_:String(finalPaidY) + '（取较大值）'});
       }
 
-      // 归档状态：如果新旧都要求归档，保留原归档时间；否则按新状态
       var archived = (st === '放弃监控');
       if(archived && existing.archived && existing.archivedAt){
         finalArchivedAt = existing.archivedAt;
@@ -1438,6 +1525,7 @@ async function processImportRows(rows){
         name: nm,
         app_no: no,
         app_date: newAppDate,
+        grant_date: grantStr,
         type: newType,
         client: cl,
         reduction: reduction,
@@ -1451,10 +1539,10 @@ async function processImportRows(rows){
       var res = await sb.from('patents').upsert(row2, {onConflict:'id'});
       if(res.error){ fail++; if(!firstErr) firstErr = res.error.message; continue; }
 
-      // 同步本地 state，防止同一文件后续条目匹配失败
       existing.name = nm;
       existing.appNo = no;
       existing.appDate = newAppDate;
+      existing.grantDate = grantStr;
       existing.type = newType;
       existing.client = cl;
       existing.reduction = reduction;
@@ -1471,7 +1559,6 @@ async function processImportRows(rows){
         unchangedCount++;
       }
     } else {
-      // 新增
       id = it.id || ('P' + Date.now() + Math.random().toString(36).slice(2,7) + k);
       var archived2 = (st === '放弃监控');
       var row3 = {
@@ -1480,6 +1567,7 @@ async function processImportRows(rows){
         name: nm,
         app_no: no,
         app_date: newAppDate,
+        grant_date: grantStr,
         type: newType,
         client: cl,
         reduction: reduction,
@@ -1494,12 +1582,12 @@ async function processImportRows(rows){
       if(res2.error){ fail++; if(!firstErr) firstErr = res2.error.message; continue; }
       newCount++;
 
-      // 同步本地 state
       state.patents.push({
         id: id,
         name: nm,
         appNo: no,
         appDate: newAppDate,
+        grantDate: grantStr,
         type: newType,
         client: cl,
         reduction: reduction,
@@ -1516,7 +1604,6 @@ async function processImportRows(rows){
   await loadPatents();
   renderAll();
 
-  // === 组织提示信息 ===
   var lines = [];
   lines.push('导入完成');
   lines.push('───────────────');
@@ -1528,6 +1615,17 @@ async function processImportRows(rows){
     lines.push('');
     lines.push('⚠ 申请日无法识别的记录（前 ' + invalidDates.length + ' 条）：');
     invalidDates.forEach(function(s){ lines.push('  · ' + s); });
+  }
+  if(invalidGrantDates.length){
+    lines.push('');
+    lines.push('⚠ 授权日无法识别的记录（前 ' + invalidGrantDates.length + ' 条，已按空值处理）：');
+    invalidGrantDates.forEach(function(s){ lines.push('  · ' + s); });
+  }
+  if(reductionWithoutGrant.length){
+    lines.push('');
+    lines.push('⚠ 下列记录填写了费减比例但没有授权日，已按「不享受减免」处理：');
+    reductionWithoutGrant.slice(0, 10).forEach(function(s){ lines.push('  · ' + s); });
+    if(reductionWithoutGrant.length > 10) lines.push('  · ...（共 '+reductionWithoutGrant.length+' 条）');
   }
   if(firstErr){
     lines.push('');
@@ -1577,10 +1675,11 @@ function importFile(file){
         var header = COL_HEADERS;
         var rows = [header].concat(list.map(function(it){
           return [
-            it.name||'', it.appNo||it.app_no||'', it.type||'发明',
-            it.appDate||it.app_date||'', it.client||'',
-            it.reduction||0, it.status||'有效',
-            it.paidYear||it.paid_year||0, it.notes||''
+            it.name||'', it.appDate||it.app_date||'',
+            it.appNo||it.app_no||'', it.type||'发明',
+            it.client||'', it.grantDate||it.grant_date||'',
+            it.reduction||0, it.paidYear||it.paid_year||0,
+            it.notes||''
           ];
         }));
         await processImportRows(rows);
@@ -1606,8 +1705,9 @@ function exportXLSX(filename, data, sheetName){
   var ws = XLSX.utils.aoa_to_sheet(data);
   ws['!cols'] = COL_WIDTHS;
   var range = XLSX.utils.decode_range(ws['!ref']);
+  /* 申请号在第 3 列（index 2），强制文本格式 */
   for(var R = range.s.r + 1; R <= range.e.r; R++){
-    var cellAddr = XLSX.utils.encode_cell({r:R, c:1});
+    var cellAddr = XLSX.utils.encode_cell({r:R, c:2});
     if(ws[cellAddr]){ ws[cellAddr].t = 's'; ws[cellAddr].z = '@'; }
   }
   var wb = XLSX.utils.book_new();
@@ -1615,11 +1715,18 @@ function exportXLSX(filename, data, sheetName){
   XLSX.writeFile(wb, filename);
 }
 function exportPatentsXLSX(){
+  /* 顺序：专利名称 | 申请日 | 申请号 | 专利类型 | 客户 | 授权日 | 费减比例 | 已缴年度 | 备注 */
   var data=[COL_HEADERS].concat(state.patents.map(function(p){
     return [
-      p.name, p.appNo, p.type, p.appDate,
-      p.client, p.reduction || 0, p.status || '有效',
-      paidYear(p), p.notes || ''
+      p.name,
+      p.appDate,
+      p.appNo,
+      p.type,
+      p.client,
+      p.grantDate || '',
+      p.reduction || 0,
+      paidYear(p),
+      p.notes || ''
     ];
   }));
   exportXLSX('专利数据_' + fmtDate(new Date()) + '.xlsx', data, '专利数据');
