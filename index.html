@@ -383,7 +383,7 @@ tbody tr.archived-row{opacity:.62}
         <h4>四、费减政策</h4>
         <p>符合条件的小微企业可减缴 <b>70%</b>，个人可减缴 <b>85%</b>。</p>
         <p><b>费减覆盖范围为自申请日起算的前 10 个专利年度</b>。</p>
-        <p>Excel 中"费减比例"一列，<b>既可以填 85 也可填 0.85</b>，系统会自动识别：小于等于 1 视为小数（如 0.85 = 85%），大于 1 视为百分数。</p>
+        <p>Excel 中"费减比例"一列，<b>既可以填 85 也可填 0.85</b>，系统会自动识别。</p>
         <h4>五、已缴年度</h4>
         <p><b>已缴年度 = 最后一次缴过年费的最高年度</b>。系统自动计算 <b>应缴年度 = 已缴年度 + 1</b>。</p>
         <h4>六、保护年限上限</h4>
@@ -392,7 +392,7 @@ tbody tr.archived-row{opacity:.62}
         <p>状态只有两种：<b>有效</b>、<b>放弃监控</b>。改为「放弃监控」时自动归档。</p>
         <h4>八、导入导出格式</h4>
         <p>支持 <b>Excel（.xlsx / .xls）</b> 和 CSV 两种格式。</p>
-        <p><b>申请日</b>严格只接受以下 7 种格式（封闭，不扩展）：</p>
+        <p><b>申请日</b>严格只接受以下 8 种格式（封闭，不扩展）：</p>
         <ul>
           <li><code>20260524</code>（8 位纯数字）</li>
           <li><code>2026-05-24</code>（横杠 + 两位月日）</li>
@@ -401,8 +401,9 @@ tbody tr.archived-row{opacity:.62}
           <li><code>2026/5/24</code>（斜杠 + 一位或两位月日）</li>
           <li><code>2026.05.24</code>（点号 + 两位月日）</li>
           <li><code>2026.5.24</code>（点号 + 一位或两位月日）</li>
+          <li><code>2026年5月25日</code>（中文年月日，必须齐全）</li>
         </ul>
-        <p><b>Excel 单元格常见带时间戳格式（如 <code>2019-05-20 00:00:00</code>）会被自动剥离时间部分后校验。</b>非法日期（如 <code>20260230</code>、<code>20261301</code>）一律拒绝，不自动修正。</p>
+        <p>Excel 单元格常见带时间戳格式（如 <code>2019-05-20 00:00:00</code>）会被自动剥离时间部分后校验。非法日期一律拒绝，不自动修正。</p>
         <h4>九、年费标准（人民币元）</h4>
         <table style="margin-top:8px;font-size:14px">
           <thead><tr><th>类型</th><th>年度区间</th><th>每年标准</th></tr></thead>
@@ -512,7 +513,7 @@ var TYPE_BADGE = { '发明':'blue', '实用新型':'cyan', '外观设计':'purpl
 var REDUCTION_YEARS = 10;
 
 /* =========================================================
-   申请日解析 —— 严格封闭，只接受以下 7 种格式，不扩展：
+   申请日解析 —— 严格封闭，只接受以下 8 种格式，不扩展：
    1. 20260524       8 位纯数字
    2. 2026-05-24     横杠 + 两位月/日
    3. 2026-5-24      横杠 + 一位或两位月/日
@@ -520,9 +521,9 @@ var REDUCTION_YEARS = 10;
    5. 2026/5/24      斜杠 + 一位或两位月/日
    6. 2026.05.24     点号 + 两位月/日
    7. 2026.5.24      点号 + 一位或两位月/日
-
+   8. 2026年5月25日  中文年月日（年月日必须齐全）
    特别处理：
-   - Excel 单元格常见带时间戳格式（如 "2019-05-20 00:00:00"）会剥离时间部分后按上面 7 种格式校验
+   - Excel 单元格带时间戳格式（如 "2019-05-20 00:00:00"）会剥离时间部分后校验
    - Excel 日期单元格（Date 对象）直接取年月日
    - 非法日期（如 20260230、20261301、2026-02-29）一律返回 null，绝不自动修正
    - 年份限 1900–2200
@@ -536,7 +537,6 @@ function isValidYMD(y, mo, d){
 }
 function parseDate(s){
   if(s === null || s === undefined || s === '') return null;
-  // Excel 日期单元格
   if(s instanceof Date){
     if(isNaN(s.getTime())) return null;
     return new Date(s.getFullYear(), s.getMonth(), s.getDate());
@@ -545,7 +545,6 @@ function parseDate(s){
   if(!str) return null;
 
   // 剥离时间戳：如 "2019-05-20 00:00:00" → "2019-05-20"
-  // 同时处理 "2019-05-20T00:00:00" 的情况
   var dateOnly = str.split(/[\sT]+/)[0];
   if(!dateOnly) return null;
 
@@ -573,6 +572,13 @@ function parseDate(s){
   }
   // 格式 6/7：点号 2026.05.24 或 2026.5.24
   m = dateOnly.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})$/);
+  if(m){
+    y = +m[1]; mo = +m[2]; d = +m[3];
+    if(isValidYMD(y, mo, d)) return new Date(y, mo-1, d);
+    return null;
+  }
+  // 格式 8：中文 2026年5月25日（年月日必须齐全）
+  m = dateOnly.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日$/);
   if(m){
     y = +m[1]; mo = +m[2]; d = +m[3];
     if(isValidYMD(y, mo, d)) return new Date(y, mo-1, d);
@@ -1292,9 +1298,7 @@ function normalizeDate(s){
 function normalizeReduction(v){
   var n = Number(v);
   if(isNaN(n) || n < 0) return 0;
-  // 小于等于 1 视为小数（如 0.85 → 85）
   if(n > 0 && n <= 1) return Math.round(n * 100);
-  // 大于 1 视为百分数（如 85 → 85）
   return Math.round(n);
 }
 function normalizeStatus(s){
@@ -1384,7 +1388,6 @@ async function processImportRows(rows){
     var dtRaw = it.appDate != null ? it.appDate : (it.app_date != null ? it.app_date : '');
     var cl = String(it.client || '').trim();
     if(!nm || !no || dtRaw === '' || !cl){ fail++; continue; }
-    // 严格校验申请日
     var parsed = parseDate(dtRaw);
     if(!parsed){
       fail++;
@@ -1435,8 +1438,6 @@ function importFile(file){
     reader.onload = async function(e){
       try {
         var data = new Uint8Array(e.target.result);
-        // cellDates:false → 保持原始字符串，日期会以 "2019-05-20 00:00:00" 形式出现
-        // raw:false → 格式化值（Excel 会保留原始字符串）
         var wb = XLSX.read(data, {type:'array', cellDates:false, raw:false});
         var sheet = wb.Sheets[wb.SheetNames[0]];
         var rows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:false, defval:''});
