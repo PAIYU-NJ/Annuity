@@ -110,7 +110,7 @@ tbody td.td-basic{background:inherit}
 tbody td.td-todo{background:rgba(255,247,237,.55);border-left:1px solid #fef3e2;border-right:1px solid #fef3e2;font-weight:700;color:#c2410c}
 tbody td.td-todo.first{border-left:2px solid #fed7aa;font-family:ui-monospace,Menlo,monospace;font-size:16px}
 tbody td.td-todo.last{border-right:2px solid #fed7aa;color:#dc2626;font-size:17px}
-tbody td.td-hist{background:rgba(250,251,252,.6);padding-left:10px;padding-right:10px}
+tbody td.td-hist{background:rgba(250,251,252,.6)}
 tbody tr:nth-child(odd) td{background-color:transparent}
 tbody tr:nth-child(even){background:#fafbfc}
 tbody tr:nth-child(even) td.td-todo{background:rgba(255,237,213,.4)}
@@ -120,7 +120,7 @@ tbody tr.selected{background:#eff6ff!important}
 tbody tr.archived-row{opacity:.62}
 .num{font-variant-numeric:tabular-nums;font-weight:600}
 .mono{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:#64748b}
-.truncate{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.truncate{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}
 .empty{padding:56px 20px;text-align:center;color:#64748b;font-size:15px}
 .empty .icon{font-size:48px;opacity:.35;display:block;margin-bottom:14px}
@@ -355,7 +355,7 @@ tbody tr.archived-row{opacity:.62}
 
   <section class="panel" id="panel-report">
     <div class="card">
-      <div class="card-head"><h3>📈 季度缴费报表</h3>
+      <div class="card-head"><h3>📈 周期缴费报表</h3>
         <div class="card-actions">
           <select id="reportYear"></select>
           <select id="reportClient"><option value="">全部客户</option></select>
@@ -403,24 +403,20 @@ tbody tr.archived-row{opacity:.62}
         <p><b>发明专利最长 20 年，实用新型最长 10 年，外观设计最长 15 年。</b></p>
         <h4>七、状态与归档</h4>
         <p>状态只有两种：<b>有效</b>、<b>放弃监控</b>。改为「放弃监控」时自动归档。</p>
-        <h4>八、导入导出与去重规则</h4>
+        <h4>八、周期报表说明</h4>
+        <p>「周期报表」展示<b>所选年份及其下一年</b>两个年度的季度缴费明细。</p>
+        <p>数据来源为每件专利的"下一笔待缴"（同一件专利在报表中可能只出现一次或两次，分别落在两个年度）。</p>
+        <h4>九、导入导出与去重规则</h4>
         <p>支持 <b>Excel（.xlsx / .xls）</b> 和 CSV 两种格式。</p>
         <p><b>模板与导出的列顺序（与线下管理表单对接）：</b></p>
         <ul>
-          <li>专利名称</li>
-          <li>申请日</li>
-          <li>申请号</li>
-          <li>专利类型</li>
-          <li>客户</li>
-          <li>授权日</li>
-          <li>费减比例</li>
-          <li>已缴年度</li>
-          <li>备注</li>
+          <li>专利名称</li><li>申请日</li><li>申请号</li><li>专利类型</li>
+          <li>客户</li><li>授权日</li><li>费减比例</li><li>已缴年度</li><li>备注</li>
         </ul>
         <p>导入时系统按<b>表头名称识别</b>，不要求列顺序，任意顺序均可。可选列：状态（有效/放弃监控）。</p>
         <p><b>申请号唯一：</b>导入时系统按<b>申请号</b>匹配已有记录，<b>存在则覆盖，不存在则新增</b>。</p>
         <p><b>已缴年度取大值：</b>覆盖时已缴年度取<b>新旧较大值</b>，不会因导入旧数据而倒退。</p>
-        <p>其他字段以导入数据为准直接覆盖。导入完成后会弹出详细报告，列出每一条被覆盖记录的变化字段。</p>
+        <p>导入完成后会弹出详细报告，列出每一条被覆盖记录的变化字段。</p>
         <p><b>申请日、授权日</b>严格只接受以下 8 种格式（封闭，不扩展）：</p>
         <ul>
           <li><code>20260524</code>（8 位纯数字）</li>
@@ -433,7 +429,7 @@ tbody tr.archived-row{opacity:.62}
           <li><code>2026年5月25日</code>（中文年月日，必须齐全）</li>
         </ul>
         <p>Excel 单元格带时间戳格式（如 <code>2019-05-20 00:00:00</code>）会剥离时间部分后校验。非法日期一律拒绝，不自动修正。</p>
-        <h4>九、年费标准（人民币元）</h4>
+        <h4>十、年费标准（人民币元）</h4>
         <table style="margin-top:8px;font-size:14px">
           <thead><tr><th>类型</th><th>年度区间</th><th>每年标准</th></tr></thead>
           <tbody>
@@ -568,29 +564,13 @@ function parseDate(s){
     return null;
   }
   m = dateOnly.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if(m){
-    y = +m[1]; mo = +m[2]; d = +m[3];
-    if(isValidYMD(y, mo, d)) return new Date(y, mo-1, d);
-    return null;
-  }
+  if(m){ y=+m[1];mo=+m[2];d=+m[3]; if(isValidYMD(y,mo,d)) return new Date(y,mo-1,d); return null; }
   m = dateOnly.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
-  if(m){
-    y = +m[1]; mo = +m[2]; d = +m[3];
-    if(isValidYMD(y, mo, d)) return new Date(y, mo-1, d);
-    return null;
-  }
+  if(m){ y=+m[1];mo=+m[2];d=+m[3]; if(isValidYMD(y,mo,d)) return new Date(y,mo-1,d); return null; }
   m = dateOnly.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})$/);
-  if(m){
-    y = +m[1]; mo = +m[2]; d = +m[3];
-    if(isValidYMD(y, mo, d)) return new Date(y, mo-1, d);
-    return null;
-  }
+  if(m){ y=+m[1];mo=+m[2];d=+m[3]; if(isValidYMD(y,mo,d)) return new Date(y,mo-1,d); return null; }
   m = dateOnly.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日$/);
-  if(m){
-    y = +m[1]; mo = +m[2]; d = +m[3];
-    if(isValidYMD(y, mo, d)) return new Date(y, mo-1, d);
-    return null;
-  }
+  if(m){ y=+m[1];mo=+m[2];d=+m[3]; if(isValidYMD(y,mo,d)) return new Date(y,mo-1,d); return null; }
   return null;
 }
 function fmtDate(d){
@@ -1048,6 +1028,10 @@ function renderSchedule(){
     });
   });
 }
+
+/* =========================================================
+   周期报表 —— 同时展示所选年份和下一年度的季度明细
+   ========================================================= */
 function renderReport(){
   var yearSel=document.getElementById('reportYear');
   var today=startOfDay(new Date());
@@ -1059,40 +1043,56 @@ function renderReport(){
   var sorted=Array.from(years).sort();
   var cur=yearSel.value||String(today.getFullYear());
   yearSel.innerHTML=sorted.map(function(y){
-    return '<option value="'+y+'"'+(String(y)===cur?' selected':'')+'>'+y+' 年</option>';
+    return '<option value="'+y+'"'+(String(y)===cur?' selected':'')+'>'+y+' 年（含下一年）</option>';
   }).join('');
   var year=Number(yearSel.value||today.getFullYear());
   var fClient=document.getElementById('reportClient').value;
-  var items=[];
+
+  var allItems=[];
   monitored().forEach(function(p){
     var info=nextDueInfo(p,today);
-    if(info) items.push(Object.assign({}, info, {patent:p}));
+    if(info) allItems.push(Object.assign({}, info, {patent:p}));
   });
-  if(fClient) items=items.filter(function(it){return it.patent.client===fClient;});
-  items=items.filter(function(it){
-    var d=parseDate(it.dueDate); return d&&d.getFullYear()===year;
-  });
+  if(fClient) allItems=allItems.filter(function(it){return it.patent.client===fClient;});
+
   var qs=[{name:'第一季度',m:[0,1,2]},{name:'第二季度',m:[3,4,5]},
           {name:'第三季度',m:[6,7,8]},{name:'第四季度',m:[9,10,11]}];
-  var total=items.reduce(function(s,it){return s+it.total;},0);
-  document.getElementById('reportGrid').innerHTML=qs.map(function(q,qi){
-    var qiItems=items.filter(function(it){
-      var d=parseDate(it.dueDate); return q.m.indexOf(d.getMonth())>=0;
-    }).sort(function(a,b){return parseDate(a.dueDate)-parseDate(b.dueDate);});
-    var sum=qiItems.reduce(function(s,it){return s+it.total;},0);
-    var list=qiItems.length?qiItems.map(function(it){
-      return '<div class="q-item">'+
-        '<span class="n" title="'+esc(it.patent.name)+'">'+it.dueDate.slice(5)+' · '+esc(it.patent.client)+' · '+esc(it.patent.name)+'</span>'+
-        '<span class="v">¥'+money(it.total)+'</span></div>';
-    }).join(''):'<div style="padding:24px;text-align:center;color:#64748b;font-size:14.5px">本季度无需缴纳</div>';
-    return '<div class="q-card"><div class="q-head">'+
-      '<span class="name">'+q.name+' <span style="color:#64748b;font-weight:400;font-size:14px">('+year+'.'+(qi*3+1)+'–'+(qi*3+3)+')</span></span>'+
-      '<span class="amt">¥'+money(sum)+'</span></div><div class="q-list">'+list+'</div></div>';
-  }).join('')+'<div class="q-card" style="grid-column:1/-1;background:#f8fafc">'+
-    '<div class="q-head" style="background:#eff6ff"><span class="name">'+year+' 年度合计</span>'+
-    '<span class="amt" style="font-size:20px">¥'+money(total)+'</span></div>'+
-    '<div style="padding:16px 20px;color:#64748b;font-size:14.5px">共 '+items.length+' 笔 · 涉及 '+
-    new Set(items.map(function(i){return i.patent.client;})).size+' 家客户</div></div>';
+
+  function buildYearSection(targetYear){
+    var items = allItems.filter(function(it){
+      var d=parseDate(it.dueDate); return d&&d.getFullYear()===targetYear;
+    });
+    var total=items.reduce(function(s,it){return s+it.total;},0);
+    var cardsHtml = qs.map(function(q,qi){
+      var qiItems=items.filter(function(it){
+        var d=parseDate(it.dueDate); return q.m.indexOf(d.getMonth())>=0;
+      }).sort(function(a,b){return parseDate(a.dueDate)-parseDate(b.dueDate);});
+      var sum=qiItems.reduce(function(s,it){return s+it.total;},0);
+      var list=qiItems.length?qiItems.map(function(it){
+        return '<div class="q-item">'+
+          '<span class="n" title="'+esc(it.patent.name)+'">'+it.dueDate.slice(5)+' · '+esc(it.patent.client)+' · '+esc(it.patent.name)+'</span>'+
+          '<span class="v">¥'+money(it.total)+'</span></div>';
+      }).join(''):'<div style="padding:24px;text-align:center;color:#64748b;font-size:14.5px">本季度无需缴纳</div>';
+      return '<div class="q-card"><div class="q-head">'+
+        '<span class="name">'+q.name+' <span style="color:#64748b;font-weight:400;font-size:14px">('+targetYear+'.'+(qi*3+1)+'–'+(qi*3+3)+')</span></span>'+
+        '<span class="amt">¥'+money(sum)+'</span></div><div class="q-list">'+list+'</div></div>';
+    }).join('');
+    var totalCard = '<div class="q-card" style="grid-column:1/-1;background:#f8fafc">'+
+      '<div class="q-head" style="background:#eff6ff"><span class="name">'+targetYear+' 年度合计</span>'+
+      '<span class="amt" style="font-size:20px">¥'+money(total)+'</span></div>'+
+      '<div style="padding:16px 20px;color:#64748b;font-size:14.5px">共 '+items.length+' 笔 · 涉及 '+
+      new Set(items.map(function(i){return i.patent.client;})).size+' 家客户</div></div>';
+    return cardsHtml + totalCard;
+  }
+
+  var y1 = year;
+  var y2 = year + 1;
+  var html = '';
+  html += '<div style="grid-column:1/-1;padding:12px 20px;background:#2563eb;color:#fff;border-radius:10px;font-weight:700;font-size:16px">'+y1+' 年度</div>';
+  html += buildYearSection(y1);
+  html += '<div style="grid-column:1/-1;padding:12px 20px;background:#059669;color:#fff;border-radius:10px;font-weight:700;font-size:16px;margin-top:14px">'+y2+' 年度（下一年）</div>';
+  html += buildYearSection(y2);
+  document.getElementById('reportGrid').innerHTML = html;
 }
 function openPatentModal(id){
   editingId=id||null;
@@ -1378,11 +1378,6 @@ function parseCSV(text){
   if(field !== '' || cur.length){ cur.push(field); rows.push(cur); }
   return rows;
 }
-
-/* =========================================================
-   模板 / 导出的列顺序（与线下内部管理表单对接）
-   专利名称 | 申请日 | 申请号 | 专利类型 | 客户 | 授权日 | 费减比例 | 已缴年度 | 备注
-   ========================================================= */
 var COL_HEADERS = ['专利名称','申请日','申请号','专利类型','客户','授权日','费减比例','已缴年度','备注'];
 var COL_WIDTHS = [{wch:40},{wch:14},{wch:20},{wch:12},{wch:36},{wch:14},{wch:12},{wch:12},{wch:36}];
 
@@ -1402,7 +1397,6 @@ function downloadTemplate(){
   var ws = XLSX.utils.aoa_to_sheet([COL_HEADERS, example]);
   ws['!cols'] = COL_WIDTHS;
   var range = XLSX.utils.decode_range(ws['!ref']);
-  /* 申请号在第 3 列（index 2），设为文本格式 */
   for(var R = range.s.r; R <= range.e.r; R++){
     var cellAddr = XLSX.utils.encode_cell({r:R, c:2});
     if(ws[cellAddr]) ws[cellAddr].t = 's';
@@ -1411,11 +1405,9 @@ function downloadTemplate(){
   XLSX.utils.book_append_sheet(wb, ws, '专利导入模板');
   XLSX.writeFile(wb, '专利导入模板.xlsx');
 }
-
 function normAppNo(s){
   return String(s == null ? '' : s).replace(/\s+/g,'').toUpperCase();
 }
-
 async function processImportRows(rows){
   if(rows.length < 2){ alert('文件内容为空或格式不对（至少需要表头+一行数据）'); return; }
   var header = rows[0].map(function(h){ return String(h == null ? '' : h).trim(); });
@@ -1494,7 +1486,6 @@ async function processImportRows(rows){
 
     if(existing){
       id = existing.id;
-
       if((existing.name||'') !== nm) changes.push({field:'专利名称', old:existing.name||'（空）', new_:nm});
       if((existing.type||'') !== newType) changes.push({field:'专利类型', old:existing.type||'（空）', new_:newType});
       if((existing.appDate||'') !== newAppDate) changes.push({field:'申请日', old:existing.appDate||'（空）', new_:newAppDate});
@@ -1520,21 +1511,12 @@ async function processImportRows(rows){
       }
 
       var row2 = {
-        id: id,
-        user_id: state.user.id,
-        name: nm,
-        app_no: no,
-        app_date: newAppDate,
-        grant_date: grantStr,
-        type: newType,
-        client: cl,
-        reduction: reduction,
-        status: st,
-        archived: archived,
-        archived_at: finalArchivedAt,
-        paid_year: finalPaidY,
-        notes: newNotes,
-        paid_years: []
+        id: id, user_id: state.user.id,
+        name: nm, app_no: no, app_date: newAppDate,
+        grant_date: grantStr, type: newType, client: cl,
+        reduction: reduction, status: st,
+        archived: archived, archived_at: finalArchivedAt,
+        paid_year: finalPaidY, notes: newNotes, paid_years: []
       };
       var res = await sb.from('patents').upsert(row2, {onConflict:'id'});
       if(res.error){ fail++; if(!firstErr) firstErr = res.error.message; continue; }
@@ -1562,41 +1544,22 @@ async function processImportRows(rows){
       id = it.id || ('P' + Date.now() + Math.random().toString(36).slice(2,7) + k);
       var archived2 = (st === '放弃监控');
       var row3 = {
-        id: id,
-        user_id: state.user.id,
-        name: nm,
-        app_no: no,
-        app_date: newAppDate,
-        grant_date: grantStr,
-        type: newType,
-        client: cl,
-        reduction: reduction,
-        status: st,
-        archived: archived2,
-        archived_at: archived2 ? fmtDate(new Date()) : '',
-        paid_year: paidY,
-        notes: newNotes,
-        paid_years: []
+        id: id, user_id: state.user.id,
+        name: nm, app_no: no, app_date: newAppDate,
+        grant_date: grantStr, type: newType, client: cl,
+        reduction: reduction, status: st,
+        archived: archived2, archived_at: archived2 ? fmtDate(new Date()) : '',
+        paid_year: paidY, notes: newNotes, paid_years: []
       };
       var res2 = await sb.from('patents').upsert(row3, {onConflict:'id'});
       if(res2.error){ fail++; if(!firstErr) firstErr = res2.error.message; continue; }
       newCount++;
-
       state.patents.push({
-        id: id,
-        name: nm,
-        appNo: no,
-        appDate: newAppDate,
-        grantDate: grantStr,
-        type: newType,
-        client: cl,
-        reduction: reduction,
-        status: st,
-        archived: archived2,
-        archivedAt: archived2 ? fmtDate(new Date()) : '',
-        paidYear: paidY,
-        notes: newNotes,
-        paidYears: []
+        id: id, name: nm, appNo: no, appDate: newAppDate,
+        grantDate: grantStr, type: newType, client: cl,
+        reduction: reduction, status: st,
+        archived: archived2, archivedAt: archived2 ? fmtDate(new Date()) : '',
+        paidYear: paidY, notes: newNotes, paidYears: []
       });
     }
   }
@@ -1705,7 +1668,6 @@ function exportXLSX(filename, data, sheetName){
   var ws = XLSX.utils.aoa_to_sheet(data);
   ws['!cols'] = COL_WIDTHS;
   var range = XLSX.utils.decode_range(ws['!ref']);
-  /* 申请号在第 3 列（index 2），强制文本格式 */
   for(var R = range.s.r + 1; R <= range.e.r; R++){
     var cellAddr = XLSX.utils.encode_cell({r:R, c:2});
     if(ws[cellAddr]){ ws[cellAddr].t = 's'; ws[cellAddr].z = '@'; }
@@ -1715,18 +1677,11 @@ function exportXLSX(filename, data, sheetName){
   XLSX.writeFile(wb, filename);
 }
 function exportPatentsXLSX(){
-  /* 顺序：专利名称 | 申请日 | 申请号 | 专利类型 | 客户 | 授权日 | 费减比例 | 已缴年度 | 备注 */
   var data=[COL_HEADERS].concat(state.patents.map(function(p){
     return [
-      p.name,
-      p.appDate,
-      p.appNo,
-      p.type,
-      p.client,
-      p.grantDate || '',
-      p.reduction || 0,
-      paidYear(p),
-      p.notes || ''
+      p.name, p.appDate, p.appNo, p.type,
+      p.client, p.grantDate || '', p.reduction || 0,
+      paidYear(p), p.notes || ''
     ];
   }));
   exportXLSX('专利数据_' + fmtDate(new Date()) + '.xlsx', data, '专利数据');
@@ -1740,27 +1695,48 @@ function exportScheduleXLSX(){
   });
   exportXLSX('缴费计划_' + fmtDate(new Date()) + '.xlsx', [header].concat(rows), '缴费计划');
 }
+
+/* =========================================================
+   导出报表：包含当前年和下一年的全部数据
+   ========================================================= */
 function exportReportXLSX(){
   var today=startOfDay(new Date());
   var year=Number(document.getElementById('reportYear').value);
   var fClient=document.getElementById('reportClient').value;
-  var items=[];
+
+  var allItems=[];
   monitored().forEach(function(p){
     var info=nextDueInfo(p,today);
-    if(info) items.push(Object.assign({}, info, {patent:p}));
+    if(info) allItems.push(Object.assign({}, info, {patent:p}));
   });
-  if(fClient) items=items.filter(function(it){return it.patent.client===fClient;});
-  items=items.filter(function(it){
-    var d=parseDate(it.dueDate); return d&&d.getFullYear()===year;
+  if(fClient) allItems=allItems.filter(function(it){return it.patent.client===fClient;});
+
+  var targetYears = [year, year+1];
+  var items = allItems.filter(function(it){
+    var d=parseDate(it.dueDate);
+    return d && targetYears.indexOf(d.getFullYear())>=0;
   }).sort(function(a,b){return parseDate(a.dueDate)-parseDate(b.dueDate);});
-  var header=['季度','缴费截止日','客户','专利名称','申请号','类型','年度','官费标准','减免比例','应缴年费','滞纳金','合计'];
+
+  var header=['日历年份','季度','缴费截止日','客户','专利名称','申请号','类型','专利年度','官费标准','减免比例','应缴年费','滞纳金','合计'];
   var rows=items.map(function(it){
-    return ['Q'+(Math.floor(parseDate(it.dueDate).getMonth()/3)+1),
-      it.dueDate,it.patent.client,it.patent.name,it.patent.appNo,it.patent.type,
-      '第'+it.year+'年',it.baseFee,it.reduction>0?it.reduction+'%':'0',
-      it.fee,it.lateFee,it.total];
+    var d=parseDate(it.dueDate);
+    return [
+      d.getFullYear(),
+      'Q'+(Math.floor(d.getMonth()/3)+1),
+      it.dueDate,
+      it.patent.client,
+      it.patent.name,
+      it.patent.appNo,
+      it.patent.type,
+      '第'+it.year+'年',
+      it.baseFee,
+      it.reduction>0?it.reduction+'%':'0',
+      it.fee,
+      it.lateFee,
+      it.total
+    ];
   });
-  exportXLSX('季度报表_' + year + '.xlsx', [header].concat(rows), '季度报表');
+  exportXLSX('周期报表_' + year + '-' + (year+1) + '.xlsx', [header].concat(rows), '周期报表');
 }
 function bindEvents(){
   document.getElementById('authSubmit').addEventListener('click',handleAuth);
