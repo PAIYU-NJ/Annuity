@@ -107,22 +107,25 @@ thead tr.col-row th.c-todo.last{border-right:2px solid #fed7aa}
 thead tr.col-row th.c-hist{background:#fafbfc}
 thead tr.col-row th.c-act{background:#fff}
 td{padding:14px 16px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
-/* ===== 表体分组配色（弱化） ===== */
+/* ===== 待办三列高亮 / 已缴弱化 ===== */
 tbody td.td-basic{background:inherit}
-tbody td.td-todo{background:rgba(255,247,237,.55);border-left:1px solid #fef3e2;border-right:1px solid #fef3e2}
-tbody td.td-todo.first{border-left:2px solid #fed7aa}
-tbody td.td-todo.last{border-right:2px solid #fed7aa}
+tbody td.td-todo{background:rgba(255,247,237,.55);border-left:1px solid #fef3e2;border-right:1px solid #fef3e2;font-weight:700;color:#c2410c}
+tbody td.td-todo.first{border-left:2px solid #fed7aa;font-family:ui-monospace,Menlo,monospace;font-size:16px}
+tbody td.td-todo.last{border-right:2px solid #fed7aa;color:#dc2626;font-size:17px}
 tbody td.td-hist{background:rgba(250,251,252,.6)}
 tbody tr:nth-child(odd) td{background-color:transparent}
 tbody tr:nth-child(even){background:#fafbfc}
-tbody tr:nth-child(even) td.td-todo{background:rgba(255,237,213,.35)}
+tbody tr:nth-child(even) td.td-todo{background:rgba(255,237,213,.4)}
 tbody tr:nth-child(even) td.td-hist{background:rgba(241,245,249,.5)}
 tbody tr:hover{background:#f1f5f9}
 tbody tr.selected{background:#eff6ff!important}
 tbody tr.archived-row{opacity:.62}
 .num{font-variant-numeric:tabular-nums;font-weight:600}
 .mono{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:#64748b}
-.truncate{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ===== 列宽：专利名称 240px、客户 240px ===== */
+.truncate{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ===== 操作列按钮：换行设计（保持原样） ===== */
+.row-actions{display:flex;gap:6px;flex-wrap:wrap}
 .empty{padding:56px 20px;text-align:center;color:#64748b;font-size:15px}
 .empty .icon{font-size:48px;opacity:.35;display:block;margin-bottom:14px}
 .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap}
@@ -190,9 +193,8 @@ tbody tr.archived-row{opacity:.62}
 .rules ul{padding-left:24px}
 .rules code{background:#f1f5f9;padding:2px 8px;border-radius:5px;font-size:13.5px;font-family:monospace}
 .rules .note{background:#fffbeb;border-left:4px solid #d97706;padding:14px 18px;border-radius:0 8px 8px 0;margin:12px 0;font-size:14.5px}
-.paid-input{width:70px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;text-align:center;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
-.paid-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);outline:none}
-.row-actions{display:flex;gap:6px;flex-wrap:wrap}
+.paid-input{width:70px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:7px;text-align:center;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;color:#475569;background:#f8fafc}
+.paid-input:focus{border-color:#2563eb;background:#fff;color:#0f172a;box-shadow:0 0 0 3px rgba(37,99,235,.1);outline:none}
 @media (max-width:720px){
   .form-grid{grid-template-columns:1fr}
   .fi-search{min-width:100%}
@@ -323,7 +325,7 @@ tbody tr.archived-row{opacity:.62}
               <th class="c-todo last">应缴金额</th>
               <th class="c-hist">已缴年度</th>
               <th class="c-hist">状态</th>
-              <th class="c-act" style="width:230px">操作</th>
+              <th class="c-act" style="width:130px">操作</th>
             </tr>
           </thead>
           <tbody id="ledgerBody"></tbody>
@@ -392,8 +394,7 @@ tbody tr.archived-row{opacity:.62}
         <h4>七、状态与归档</h4>
         <p>状态只有两种：<b>有效</b>、<b>放弃监控</b>。改为「放弃监控」时自动归档。</p>
         <h4>八、导入导出格式</h4>
-        <p>支持 <b>Excel（.xlsx / .xls）</b> 和 CSV 两种格式。推荐下载本系统提供的 Excel 模板，填好后直接导入。</p>
-        <p>申请号一列，建议在 Excel 中<b>设置为文本格式</b>，避免 Excel 自动转成科学计数法（如 2.02E+12）。</p>
+        <p>支持 <b>Excel（.xlsx / .xls）</b> 和 CSV 两种格式。</p>
         <h4>九、年费标准（人民币元）</h4>
         <table style="margin-top:8px;font-size:14px">
           <thead><tr><th>类型</th><th>年度区间</th><th>每年标准</th></tr></thead>
@@ -1212,7 +1213,7 @@ var HEADER_MAP = {
   '客户':'client','申请人':'client','申请人/客户':'client','申请人 / 客户':'client',
   '费减比例':'reduction','减免':'reduction','费减':'reduction',
   '状态':'status','法律状态':'status',
-  '已缴年度':'paidYear','已缴':'paidYear',
+  '已缴年度':'paidYear','已缴':'paidYear','已缴纳年度':'paidYear','缴费年度':'paidYear',
   '备注':'notes','说明':'notes'
 };
 function normalizeDate(s){
@@ -1250,11 +1251,9 @@ function parseCSV(text){
   if(field !== '' || cur.length){ cur.push(field); rows.push(cur); }
   return rows;
 }
-/* ===== 表头列顺序（导入导出共用） ===== */
 var COL_HEADERS = ['专利名称','申请号','专利类型','申请日','客户','费减比例','状态','已缴年度','备注'];
 var COL_WIDTHS = [{wch:40},{wch:20},{wch:12},{wch:14},{wch:36},{wch:12},{wch:12},{wch:12},{wch:36}];
 
-/* ===== 下载 Excel 模板 ===== */
 function downloadTemplate(){
   if(!xlsxOK){ alert('Excel 库加载失败，请刷新页面重试'); return; }
   var example = [
@@ -1270,7 +1269,6 @@ function downloadTemplate(){
   ];
   var ws = XLSX.utils.aoa_to_sheet([COL_HEADERS, example]);
   ws['!cols'] = COL_WIDTHS;
-  /* 申请号列设置为文本格式，避免被转成科学计数法 */
   var range = XLSX.utils.decode_range(ws['!ref']);
   for(var R = range.s.r; R <= range.e.r; R++){
     var cellAddr = XLSX.utils.encode_cell({r:R, c:1});
@@ -1280,8 +1278,6 @@ function downloadTemplate(){
   XLSX.utils.book_append_sheet(wb, ws, '专利导入模板');
   XLSX.writeFile(wb, '专利导入模板.xlsx');
 }
-
-/* ===== 通用：处理二维数组的导入（CSV 和 Excel 都走这里） ===== */
 async function processImportRows(rows){
   if(rows.length < 2){ alert('文件内容为空或格式不对（至少需要表头+一行数据）'); return; }
   var header = rows[0].map(function(h){ return String(h == null ? '' : h).trim(); });
@@ -1341,8 +1337,6 @@ async function processImportRows(rows){
   if(firstErr) msg += '\n首个错误：' + firstErr;
   alert(msg);
 }
-
-/* ===== 导入文件：支持 .xlsx / .xls / .csv / .json ===== */
 function importFile(file){
   var fname = file.name.toLowerCase();
   var reader = new FileReader();
@@ -1393,13 +1387,10 @@ function importFile(file){
     reader.readAsText(file, 'UTF-8');
   }
 }
-
-/* ===== 导出 Excel ===== */
 function exportXLSX(filename, data, sheetName){
   if(!xlsxOK){ alert('Excel 库加载失败，请刷新页面重试'); return; }
   var ws = XLSX.utils.aoa_to_sheet(data);
   ws['!cols'] = COL_WIDTHS;
-  /* 申请号列（第 2 列，index 1）设为文本 */
   var range = XLSX.utils.decode_range(ws['!ref']);
   for(var R = range.s.r + 1; R <= range.e.r; R++){
     var cellAddr = XLSX.utils.encode_cell({r:R, c:1});
@@ -1419,7 +1410,6 @@ function exportPatentsXLSX(){
   }));
   exportXLSX('专利数据_' + fmtDate(new Date()) + '.xlsx', data, '专利数据');
 }
-/* 缴费计划导出 */
 function exportScheduleXLSX(){
   var header=['缴费截止日','剩余天数','客户','专利名称','申请号','类型','年度','官费标准','减免比例','应缴年费','滞纳金','合计'];
   var rows=scheduleCache.map(function(it){
@@ -1429,7 +1419,6 @@ function exportScheduleXLSX(){
   });
   exportXLSX('缴费计划_' + fmtDate(new Date()) + '.xlsx', [header].concat(rows), '缴费计划');
 }
-/* 季度报表导出 */
 function exportReportXLSX(){
   var today=startOfDay(new Date());
   var year=Number(document.getElementById('reportYear').value);
