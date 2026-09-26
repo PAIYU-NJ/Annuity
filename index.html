@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>专利年费管理系统</title>
+<title>IP 管理系统</title>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -29,6 +29,7 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:#2563eb}
 .auth-msg{font-size:14px;text-align:center;margin-top:14px;padding:10px;border-radius:8px;display:none}
 .auth-msg.error{display:block;background:#fef2f2;color:#dc2626}
 .auth-msg.success{display:block;background:#f0fdf4;color:#16a34a}
+
 .app{max-width:1700px;margin:0 auto;padding:0 24px 60px;display:none}
 .app.ready{display:block}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:24px 0 18px;flex-wrap:wrap;gap:14px}
@@ -39,6 +40,13 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:#2563eb}
 .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .user-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:999px;font-size:14px;color:#64748b}
 .user-chip .dot{width:8px;height:8px;border-radius:50%;background:#16a34a}
+
+/* 顶部业务切换器 */
+.module-switch{display:inline-flex;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:4px;gap:3px}
+.module-switch button{padding:9px 20px;border-radius:9px;font-size:15px;font-weight:700;color:#64748b;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.module-switch button:hover{color:#0f172a}
+.module-switch button.active{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.3)}
+
 .btn{padding:10px 18px;border-radius:9px;background:#2563eb;color:#fff;font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;transition:.15s}
 .btn:hover{background:#1d4ed8}
 .btn.ghost{background:#fff;color:#0f172a;border:1px solid #e2e8f0}
@@ -50,12 +58,14 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:#2563eb}
 .btn.ok:hover{background:#15803d}
 .btn.amber{background:#d97706}
 .btn.amber:hover{background:#b45309}
+
 .tabs{display:flex;gap:6px;border-bottom:2px solid #e2e8f0;margin-bottom:26px;overflow-x:auto}
 .tab{padding:13px 22px;font-weight:600;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;font-size:16px;transition:.15s}
 .tab:hover{color:#0f172a}
 .tab.active{color:#2563eb;border-bottom-color:#2563eb}
 .panel{display:none}
 .panel.active{display:block}
+
 .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:22px;overflow:hidden}
 .card-head{padding:18px 22px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .card-head h3{font-size:18px;font-weight:700}
@@ -73,23 +83,26 @@ select:focus,input:focus,textarea:focus{border-color:#2563eb;box-shadow:0 0 0 3p
 .filter-bar{display:flex;flex-wrap:wrap;gap:14px;padding:18px 22px;border-bottom:1px solid #e2e8f0;background:#fcfdfe;align-items:flex-end}
 .fi{display:flex;flex-direction:column;gap:6px}
 .fi label{font-size:13px;color:#64748b;font-weight:600}
-.fi-search{flex:1;min-width:240px}
+.fi-search{flex:1;min-width:220px}
 .fi-search input{width:100%}
-.fi-date{width:160px}
+.fi-date{width:150px}
 .bulk-bar{display:flex;align-items:center;gap:12px;padding:14px 22px;background:#eff6ff;border-bottom:1px solid #bfdbfe;flex-wrap:wrap}
 .bulk-bar[hidden]{display:none}
 .bulk-bar .info{font-size:15px;color:#1e40af;font-weight:600}
 .bulk-bar .info b{font-size:18px;font-weight:800}
+
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-bottom:24px}
 .stat{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px;position:relative;overflow:hidden}
 .stat::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:#2563eb}
 .stat.danger::before{background:#dc2626}
 .stat.warn::before{background:#d97706}
+.stat.ok::before{background:#16a34a}
 .stat.gray::before{background:#94a3b8}
 .stat-label{font-size:14px;color:#64748b;font-weight:500}
 .stat-value{font-size:34px;font-weight:800;letter-spacing:-1px;margin:6px 0 4px}
 .stat-value small{font-size:16px;font-weight:600;color:#64748b;margin-left:4px}
 .stat-sub{font-size:14px;color:#64748b}
+
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:15px}
 th{text-align:left;padding:14px 16px;font-weight:600;color:#475569;font-size:14px;background:#f8fafc;border-bottom:1px solid #e2e8f0;white-space:nowrap}
@@ -110,20 +123,26 @@ tbody td.td-basic{background:inherit}
 tbody td.td-todo{background:rgba(255,247,237,.55);border-left:1px solid #fef3e2;border-right:1px solid #fef3e2;font-weight:700;color:#c2410c}
 tbody td.td-todo.first{border-left:2px solid #fed7aa;font-family:ui-monospace,Menlo,monospace;font-size:16px}
 tbody td.td-todo.last{border-right:2px solid #fed7aa;color:#dc2626;font-size:17px}
-tbody td.td-hist{background:rgba(250,251,252,.6);padding-left:6px;padding-right:6px}
+tbody td.td-hist{background:rgba(250,251,252,.6)}
 tbody tr:nth-child(odd) td{background-color:transparent}
 tbody tr:nth-child(even){background:#fafbfc}
-tbody tr:nth-child(even) td.td-todo{background:rgba(255,237,213,.4)}
-tbody tr:nth-child(even) td.td-hist{background:rgba(241,245,249,.5)}
 tbody tr:hover{background:#f1f5f9}
 tbody tr.selected{background:#eff6ff!important}
 tbody tr.archived-row{opacity:.62}
+/* 商标行级高亮 */
+tbody tr.row-grace{background:#fef2f2!important;box-shadow:inset 4px 0 0 #dc2626}
+tbody tr.row-renewable{background:#fffbeb!important;box-shadow:inset 4px 0 0 #d97706}
+tbody tr.row-expired{background:#f1f5f9!important;box-shadow:inset 4px 0 0 #94a3b8}
+tbody tr.row-grace:hover{background:#fee2e2!important}
+tbody tr.row-renewable:hover{background:#fef3c7!important}
+
 .num{font-variant-numeric:tabular-nums;font-weight:600}
 .mono{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:#64748b}
-.truncate{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.truncate{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}
 .empty{padding:56px 20px;text-align:center;color:#64748b;font-size:15px}
 .empty .icon{font-size:48px;opacity:.35;display:block;margin-bottom:14px}
+
 .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap}
 .badge.blue{background:#eff6ff;color:#1d4ed8}
 .badge.cyan{background:#ecfeff;color:#0891b2}
@@ -133,16 +152,20 @@ tbody tr.archived-row{opacity:.62}
 .badge.green{background:#f0fdf4;color:#16a34a}
 .badge.gray{background:#f1f5f9;color:#475569}
 .badge.slate{background:#e2e8f0;color:#334155}
+
 .alert-row{display:flex;align-items:center;gap:16px;padding:16px 22px;border-bottom:1px solid #f1f5f9;flex-wrap:wrap}
 .alert-row:nth-child(even){background:#fafbfc}
 .alert-row:hover{background:#f1f5f9}
+.alert-row.grace{background:#fef2f2!important}
+.alert-row.grace:hover{background:#fee2e2!important}
 .alert-row .bar{width:5px;height:44px;border-radius:3px;flex-shrink:0}
-.alert-main{flex:1;min-width:240px}
+.alert-main{flex:1;min-width:220px}
 .alert-main .t{font-weight:600;font-size:16px}
 .alert-main .s{font-size:14px;color:#64748b;margin-top:2px}
 .alert-meta{text-align:right;min-width:150px}
 .alert-meta .amt{font-weight:800;font-size:17px}
 .alert-meta .dt{font-size:13px;color:#64748b;margin-top:2px}
+
 .overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
 .overlay.show{display:flex}
 .modal{background:#fff;border-radius:18px;width:100%;max-width:720px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(15,23,42,.3)}
@@ -162,17 +185,19 @@ tbody tr.archived-row{opacity:.62}
 .field input,.field select,.field textarea{width:100%}
 .field textarea{resize:vertical;min-height:80px}
 .hint{font-size:13px;color:#64748b}
+
 .tl{position:relative;padding-left:26px}
 .tl::before{content:'';position:absolute;left:8px;top:10px;bottom:10px;width:2px;background:#e2e8f0}
 .tl-item{position:relative;padding:12px 0 12px 16px}
 .tl-item::before{content:'';position:absolute;left:-24px;top:20px;width:12px;height:12px;border-radius:50%;background:#cbd5e1;border:2px solid #fff}
-.tl-item.paid::before{background:#16a34a}
-.tl-item.next::before{background:#2563eb}
-.tl-item.overdue::before{background:#dc2626}
+.tl-item.done::before{background:#16a34a}
+.tl-item.active::before{background:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+.tl-item.warn::before{background:#d97706}
+.tl-item.danger::before{background:#dc2626}
 .tl-item .row{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:baseline}
 .tl-item .y{font-weight:700;font-size:15px}
 .tl-item .d{font-size:14px;color:#64748b}
-.tl-item .f{font-weight:700;font-size:15px}
+
 .q-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
 .q-card{border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;background:#fff}
 .q-head{padding:15px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
@@ -183,12 +208,14 @@ tbody tr.archived-row{opacity:.62}
 .q-item:nth-child(even){background:#fafbfc}
 .q-item .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#334155}
 .q-item .v{font-weight:600;white-space:nowrap}
+
 .rules{font-size:15px;line-height:2;color:#334155}
 .rules h4{font-size:16px;font-weight:700;margin:18px 0 8px}
 .rules h4:first-child{margin-top:0}
 .rules ul{padding-left:24px}
 .rules code{background:#f1f5f9;padding:2px 8px;border-radius:5px;font-size:13.5px;font-family:monospace}
 .rules .note{background:#fffbeb;border-left:4px solid #d97706;padding:14px 18px;border-radius:0 8px 8px 0;margin:12px 0;font-size:14.5px}
+
 .paid-input{width:70px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:7px;text-align:center;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;color:#475569;background:#f8fafc}
 .paid-input:focus{border-color:#2563eb;background:#fff;color:#0f172a;box-shadow:0 0 0 3px rgba(37,99,235,.1);outline:none}
 @media (max-width:720px){
@@ -203,7 +230,7 @@ tbody tr.archived-row{opacity:.62}
 <div id="authScreen">
   <div class="auth-card">
     <div class="logo">⚖</div>
-    <h2>专利年费管理系统</h2>
+    <h2>IP 管理系统</h2>
     <p class="sub" id="authSub">请登录以继续</p>
     <div class="auth-field"><label>邮箱</label>
       <input type="email" id="authEmail" placeholder="your@email.com" autocomplete="email"></div>
@@ -219,242 +246,418 @@ tbody tr.archived-row{opacity:.62}
 <div class="app" id="app">
   <header class="topbar">
     <div class="brand"><div class="logo">⚖</div>
-      <div><h1>专利年费管理系统</h1><p>Patent Annuity Manager</p></div></div>
+      <div><h1>IP 管理系统</h1><p>IP Portfolio Manager</p></div></div>
+    <div class="module-switch" id="moduleSwitch">
+      <button data-module="patent" class="active">⚖ 专利</button>
+      <button data-module="trademark">🏷️ 商标</button>
+    </div>
     <div class="actions">
       <span class="user-chip"><span class="dot"></span><span id="userEmail"></span></span>
+      <button class="btn ghost" id="btnLogout">退出</button>
+    </div>
+  </header>
+
+  <!-- ==================== 专利模块 ==================== -->
+  <div id="module-patent">
+    <div class="card" style="padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
       <button class="btn" id="btnAdd">＋ 新增专利</button>
       <button class="btn ghost" id="btnTemplate">📄 下载模板</button>
       <button class="btn ghost" id="btnImport">📥 导入 Excel</button>
       <button class="btn ghost" id="btnExportAll">📤 导出 Excel</button>
-      <button class="btn ghost" id="btnLogout">退出</button>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.json" hidden>
     </div>
-  </header>
-  <nav class="tabs">
-    <button class="tab active" data-tab="dashboard">📊 看板</button>
-    <button class="tab" data-tab="ledger">📋 专利台账</button>
-    <button class="tab" data-tab="schedule">📅 缴费计划</button>
-    <button class="tab" data-tab="report">📈 周期报表</button>
-    <button class="tab" data-tab="settings">⚙️ 规则说明</button>
-  </nav>
+    <nav class="tabs">
+      <button class="tab active" data-tab="dashboard">📊 看板</button>
+      <button class="tab" data-tab="ledger">📋 专利台账</button>
+      <button class="tab" data-tab="schedule">📅 缴费计划</button>
+      <button class="tab" data-tab="report">📈 周期报表</button>
+      <button class="tab" data-tab="settings">⚙️ 规则说明</button>
+    </nav>
 
-  <section class="panel active" id="panel-dashboard">
-    <div class="stat-grid" id="statGrid"></div>
-    <div class="card">
-      <div class="card-head"><h3>⏰ 缴费提醒</h3>
-        <div class="card-actions"><label>范围
-          <select id="alertHorizon">
-            <option value="30">未来 30 天</option><option value="60">未来 60 天</option>
-            <option value="90" selected>未来 90 天</option><option value="180">未来 180 天</option>
-            <option value="99999">全部未缴</option>
-          </select></label></div></div>
-      <div id="alertList"></div>
-    </div>
-  </section>
-
-  <section class="panel" id="panel-ledger">
-    <div class="card">
-      <div class="card-head"><h3>📋 专利台账</h3>
-        <div class="seg" id="ledgerScope">
-          <button class="seg-btn active" data-scope="active">监控中 <span class="cnt" id="cntActive">0</span></button>
-          <button class="seg-btn" data-scope="archived">已归档 <span class="cnt" id="cntArchived">0</span></button>
-          <button class="seg-btn" data-scope="all">全部 <span class="cnt" id="cntAll">0</span></button>
-        </div></div>
-      <div class="filter-bar">
-        <div class="fi fi-search"><label>关键词</label>
-          <input type="text" id="ledgerSearch" placeholder="🔍 名称 / 申请号 / 客户…"></div>
-        <div class="fi"><label>客户</label>
-          <select id="ledgerClient"><option value="">全部</option></select></div>
-        <div class="fi"><label>类型</label>
-          <select id="ledgerType"><option value="">全部</option>
-            <option>发明</option><option>实用新型</option><option>外观设计</option></select></div>
-        <div class="fi"><label>减免</label>
-          <select id="ledgerReduction"><option value="">全部</option>
-            <option value="0">不减缴</option><option value="70">减缴 70%</option>
-            <option value="85">减缴 85%</option></select></div>
-        <div class="fi"><label>状态</label>
-          <select id="ledgerStatus"><option value="">全部</option>
-            <option>有效</option><option>放弃监控</option></select></div>
-        <div class="fi"><label>紧急度</label>
-          <select id="ledgerUrgency"><option value="">全部</option>
-            <option value="overdue">已逾期</option><option value="30">30 天内</option>
-            <option value="90">90 天内</option><option value="none">无待缴</option></select></div>
-        <div class="fi fi-date"><label>申请日 ≥</label><input type="date" id="ledgerAppFrom"></div>
-        <div class="fi fi-date"><label>申请日 ≤</label><input type="date" id="ledgerAppTo"></div>
-        <div class="fi"><label>&nbsp;</label>
-          <button class="btn ghost sm" id="btnResetFilters">重置筛选</button></div>
+    <section class="panel active" id="panel-dashboard">
+      <div class="stat-grid" id="statGrid"></div>
+      <div class="card">
+        <div class="card-head"><h3>⏰ 缴费提醒</h3>
+          <div class="card-actions"><label>范围
+            <select id="alertHorizon">
+              <option value="30">未来 30 天</option><option value="60">未来 60 天</option>
+              <option value="90" selected>未来 90 天</option><option value="180">未来 180 天</option>
+              <option value="99999">全部未缴</option>
+            </select></label></div></div>
+        <div id="alertList"></div>
       </div>
-      <div class="bulk-bar" id="bulkBar" hidden>
-        <span class="info">已选中 <b id="selCount">0</b> 件</span>
-        <button class="btn sm amber" id="bulkArchive">📦 归档</button>
-        <button class="btn sm ok" id="bulkRestore">↩ 恢复监控</button>
-        <button class="btn sm" id="bulkSetPaid">✓ 批量标记已缴</button>
-        <select id="bulkStatusSel" style="padding:7px 12px;font-size:14px">
-          <option value="有效">有效</option>
-          <option value="放弃监控">放弃监控</option></select>
-        <button class="btn sm ghost" id="bulkSetStatus">批量改状态</button>
-        <button class="btn sm ghost" id="bulkExport">导出选中</button>
-        <button class="btn sm danger" id="bulkDelete">🗑 批量删除</button>
-        <button class="btn sm ghost" id="bulkClear">取消选择</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr class="group-row">
-              <th colspan="2" class="g-act" style="background:#fff;color:#94a3b8">选择</th>
-              <th colspan="7" class="g-basic">📌 基本信息</th>
-              <th colspan="3" class="g-todo">🔔 待办提醒</th>
-              <th colspan="2" class="g-hist">📜 历史情况</th>
-              <th class="g-act">操作</th>
-            </tr>
-            <tr class="col-row">
-              <th class="c-act" style="width:42px"><input type="checkbox" id="checkAll"></th>
-              <th class="c-act" style="width:50px">#</th>
-              <th class="c-basic">专利名称</th>
-              <th class="c-basic">申请号</th>
-              <th class="c-basic">专利类型</th>
-              <th class="c-basic">客户</th>
-              <th class="c-basic">申请日</th>
-              <th class="c-basic">授权日</th>
-              <th class="c-basic">费减比例</th>
-              <th class="c-todo first">应缴年度</th>
-              <th class="c-todo">截止日</th>
-              <th class="c-todo last">应缴金额</th>
-              <th class="c-hist">已缴年度</th>
-              <th class="c-hist">状态</th>
-              <th class="c-act" style="width:130px">操作</th>
-            </tr>
-          </thead>
-          <tbody id="ledgerBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="panel" id="panel-schedule">
-    <div class="card">
-      <div class="card-head"><h3>📅 缴费计划<span style="font-size:14px;color:#64748b;font-weight:400;margin-left:10px" id="scheduleSub"></span></h3>
-        <div class="card-actions">
-          <select id="scheduleRange">
-            <option value="90">未来 3 个月</option><option value="180">未来 6 个月</option>
-            <option value="365" selected>未来 12 个月</option><option value="1095">未来 3 年</option>
-            <option value="all">全部未缴</option><option value="overdue">仅逾期</option>
-          </select>
-          <select id="scheduleClient"><option value="">全部客户</option></select>
-          <button class="btn sm" id="btnExportSchedule">导出 Excel</button>
-        </div></div>
-      <div class="table-wrap">
-        <table><thead><tr>
-          <th>截止日</th><th>剩余</th><th>客户</th><th>专利名称</th><th>申请号</th>
-          <th>类型</th><th>年度</th><th>官费</th><th>减免</th><th>应缴</th>
-          <th>滞纳金</th><th>合计</th><th style="width:100px">操作</th>
-        </tr></thead><tbody id="scheduleBody"></tbody></table>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel" id="panel-report">
-    <div class="card">
-      <div class="card-head"><h3>📈 周期缴费报表</h3>
-        <div class="card-actions">
-          <select id="reportYear"></select>
-          <select id="reportClient"><option value="">全部客户</option></select>
-          <button class="btn sm" id="btnExportReport">导出 Excel</button>
-        </div></div>
-      <div class="card-body"><div class="q-grid" id="reportGrid"></div></div>
-    </div>
-  </section>
-
-  <section class="panel" id="panel-settings">
-    <div class="card">
-      <div class="card-head"><h3>📐 年费计算规则</h3></div>
-      <div class="card-body rules">
-        <h4>一、专利年度</h4>
-        <p>自申请日起算，第 N 年度 = <code>申请日 + (N-1) 年</code> 至 <code>申请日 + N 年 - 1 天</code>。</p>
-        <h4>二、缴费截止日</h4>
-        <p>年费应当在上一年度期满前缴纳，<b>缴费期限届满日 = 申请日在该年的对应日</b>（即第 N 年度起始日）。</p>
-        <h4>三、滞纳金</h4>
-        <p>超过缴费期限的，可在 6 个月宽限期内补缴，同时缴纳滞纳金：</p>
-        <ul>
-          <li>逾期 1 个月以内：不缴纳滞纳金</li>
-          <li>超过 1 个月后，每超过 1 个月加收<b>当年全额年费的 5%</b>（最高 25%）</li>
-          <li>超过 6 个月仍未缴纳：专利权自应当缴纳年费期满之日起终止</li>
-        </ul>
-        <div class="note">⚠️ 系统按"逾期满月数 × 5%"自动计算，1 个月内为 0，第 6 个月为 25%。实际金额以国家知识产权局缴费通知为准。</div>
-        <h4>四、费减政策</h4>
-        <p>符合条件的小微企业可减缴 <b>70%</b>，个人可减缴 <b>85%</b>。</p>
-        <p><b>减免覆盖范围为：自授权当年起 10 个专利年度。</b></p>
-        <div class="note">
-          <b>示例：</b>申请日 2016-09-27，授权日 2019-01-08，减免 85%<br>
-          · 授权日落在第 3 专利年度（2018-09-27 ~ 2019-09-26）<br>
-          · 减免覆盖：第 3、4、5、6、7、8、9、10、11、12 年度（共 10 个年度）<br>
-          · 第 3 年度年费 = 900 × 15% = <b>135 元</b><br>
-          · 第 13 年度起恢复标准费率
+    <section class="panel" id="panel-ledger">
+      <div class="card">
+        <div class="card-head"><h3>📋 专利台账</h3>
+          <div class="seg" id="ledgerScope">
+            <button class="seg-btn active" data-scope="active">监控中 <span class="cnt" id="cntActive">0</span></button>
+            <button class="seg-btn" data-scope="archived">已归档 <span class="cnt" id="cntArchived">0</span></button>
+            <button class="seg-btn" data-scope="all">全部 <span class="cnt" id="cntAll">0</span></button>
+          </div></div>
+        <div class="filter-bar">
+          <div class="fi fi-search"><label>关键词</label>
+            <input type="text" id="ledgerSearch" placeholder="🔍 名称 / 申请号 / 客户…"></div>
+          <div class="fi"><label>客户</label><select id="ledgerClient"><option value="">全部</option></select></div>
+          <div class="fi"><label>类型</label>
+            <select id="ledgerType"><option value="">全部</option>
+              <option>发明</option><option>实用新型</option><option>外观设计</option></select></div>
+          <div class="fi"><label>减免</label>
+            <select id="ledgerReduction"><option value="">全部</option>
+              <option value="0">不减缴</option><option value="70">减缴 70%</option>
+              <option value="85">减缴 85%</option></select></div>
+          <div class="fi"><label>状态</label>
+            <select id="ledgerStatus"><option value="">全部</option>
+              <option>有效</option><option>放弃监控</option></select></div>
+          <div class="fi"><label>紧急度</label>
+            <select id="ledgerUrgency"><option value="">全部</option>
+              <option value="overdue">已逾期</option><option value="30">30 天内</option>
+              <option value="90">90 天内</option><option value="none">无待缴</option></select></div>
+          <div class="fi fi-date"><label>申请日 ≥</label><input type="date" id="ledgerAppFrom"></div>
+          <div class="fi fi-date"><label>申请日 ≤</label><input type="date" id="ledgerAppTo"></div>
+          <div class="fi"><label>&nbsp;</label>
+            <button class="btn ghost sm" id="btnResetFilters">重置筛选</button></div>
         </div>
-        <p><b>授权日的作用：</b></p>
-        <ul>
-          <li><b>授权日已填写</b> + 减免比例 &gt; 0 → 自授权当年起 10 个年度享受减免</li>
-          <li><b>授权日已填写</b> + 减免比例 = 0 → 不享受减免（正常按标准费率）</li>
-          <li><b>授权日为空</b> → 默认不享受减免（无论减免比例填了什么）</li>
-        </ul>
-        <h4>五、已缴年度</h4>
-        <p><b>已缴年度 = 最后一次缴过年费的最高年度</b>。系统自动计算 <b>应缴年度 = 已缴年度 + 1</b>。</p>
-        <h4>六、保护年限上限</h4>
-        <p><b>发明专利最长 20 年，实用新型最长 10 年，外观设计最长 15 年。</b></p>
-        <h4>七、状态与归档</h4>
-        <p>状态只有两种：<b>有效</b>、<b>放弃监控</b>。改为「放弃监控」时自动归档。</p>
-        <h4>八、周期报表说明</h4>
-        <p>「周期报表」展示<b>所选年份及其下一年</b>两个年度的季度缴费明细。</p>
-        <p>数据来源为每件专利的"下一笔待缴"（同一件专利在报表中可能只出现一次或两次，分别落在两个年度）。</p>
-        <h4>九、导入导出与去重规则</h4>
-        <p>支持 <b>Excel（.xlsx / .xls）</b> 和 CSV 两种格式。</p>
-        <p><b>模板与导出的列顺序（与线下管理表单对接）：</b></p>
-        <ul>
-          <li>专利名称</li><li>申请日</li><li>申请号</li><li>专利类型</li>
-          <li>客户</li><li>授权日</li><li>费减比例</li><li>已缴年度</li><li>备注</li>
-        </ul>
-        <p>导入时系统按<b>表头名称识别</b>，不要求列顺序，任意顺序均可。可选列：状态（有效/放弃监控）。</p>
-        <p><b>申请号唯一：</b>导入时系统按<b>申请号</b>匹配已有记录，<b>存在则覆盖，不存在则新增</b>。</p>
-        <p><b>已缴年度取大值：</b>覆盖时已缴年度取<b>新旧较大值</b>，不会因导入旧数据而倒退。</p>
-        <p>导入完成后会弹出详细报告，列出每一条被覆盖记录的变化字段。</p>
-        <p><b>申请日、授权日</b>严格只接受以下 8 种格式（封闭，不扩展）：</p>
-        <ul>
-          <li><code>20260524</code>（8 位纯数字）</li>
-          <li><code>2026-05-24</code>（横杠 + 两位月日）</li>
-          <li><code>2026-5-24</code>（横杠 + 一位或两位月日）</li>
-          <li><code>2026/05/24</code>（斜杠 + 两位月日）</li>
-          <li><code>2026/5/24</code>（斜杠 + 一位或两位月日）</li>
-          <li><code>2026.05.24</code>（点号 + 两位月日）</li>
-          <li><code>2026.5.24</code>（点号 + 一位或两位月日）</li>
-          <li><code>2026年5月25日</code>（中文年月日，必须齐全）</li>
-        </ul>
-        <p>Excel 单元格带时间戳格式（如 <code>2019-05-20 00:00:00</code>）会剥离时间部分后校验。非法日期一律拒绝，不自动修正。</p>
-        <h4>十、年费标准（人民币元）</h4>
-        <table style="margin-top:8px;font-size:14px">
-          <thead><tr><th>类型</th><th>年度区间</th><th>每年标准</th></tr></thead>
-          <tbody>
-            <tr><td rowspan="6">发明专利</td><td>1–3 年</td><td class="num">900</td></tr>
-            <tr><td>4–6 年</td><td class="num">1,200</td></tr>
-            <tr><td>7–9 年</td><td class="num">2,000</td></tr>
-            <tr><td>10–12 年</td><td class="num">4,000</td></tr>
-            <tr><td>13–15 年</td><td class="num">6,000</td></tr>
-            <tr><td>16–20 年</td><td class="num">8,000</td></tr>
-            <tr><td rowspan="4">实用新型</td><td>1–3 年</td><td class="num">600</td></tr>
-            <tr><td>4–5 年</td><td class="num">900</td></tr>
-            <tr><td>6–8 年</td><td class="num">1,200</td></tr>
-            <tr><td>9–10 年</td><td class="num">2,000</td></tr>
-            <tr><td rowspan="5">外观设计</td><td>1–3 年</td><td class="num">600</td></tr>
-            <tr><td>4–5 年</td><td class="num">900</td></tr>
-            <tr><td>6–8 年</td><td class="num">1,200</td></tr>
-            <tr><td>9–10 年</td><td class="num">2,000</td></tr>
-            <tr><td>11–15 年</td><td class="num">3,000</td></tr>
-          </tbody>
-        </table>
+        <div class="bulk-bar" id="bulkBar" hidden>
+          <span class="info">已选中 <b id="selCount">0</b> 件</span>
+          <button class="btn sm amber" id="bulkArchive">📦 归档</button>
+          <button class="btn sm ok" id="bulkRestore">↩ 恢复监控</button>
+          <button class="btn sm" id="bulkSetPaid">✓ 批量标记已缴</button>
+          <select id="bulkStatusSel" style="padding:7px 12px;font-size:14px">
+            <option value="有效">有效</option><option value="放弃监控">放弃监控</option></select>
+          <button class="btn sm ghost" id="bulkSetStatus">批量改状态</button>
+          <button class="btn sm ghost" id="bulkExport">导出选中</button>
+          <button class="btn sm danger" id="bulkDelete">🗑 批量删除</button>
+          <button class="btn sm ghost" id="bulkClear">取消选择</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr class="group-row">
+                <th colspan="2" class="g-act" style="background:#fff;color:#94a3b8">选择</th>
+                <th colspan="7" class="g-basic">📌 基本信息</th>
+                <th colspan="3" class="g-todo">🔔 待办提醒</th>
+                <th colspan="2" class="g-hist">📜 历史情况</th>
+                <th class="g-act">操作</th>
+              </tr>
+              <tr class="col-row">
+                <th class="c-act" style="width:42px"><input type="checkbox" id="checkAll"></th>
+                <th class="c-act" style="width:50px">#</th>
+                <th class="c-basic">专利名称</th>
+                <th class="c-basic">申请号</th>
+                <th class="c-basic">专利类型</th>
+                <th class="c-basic">客户</th>
+                <th class="c-basic">申请日</th>
+                <th class="c-basic">授权日</th>
+                <th class="c-basic">费减比例</th>
+                <th class="c-todo first">应缴年度</th>
+                <th class="c-todo">截止日</th>
+                <th class="c-todo last">应缴金额</th>
+                <th class="c-hist">已缴年度</th>
+                <th class="c-hist">状态</th>
+                <th class="c-act" style="width:130px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerBody"></tbody>
+          </table>
+        </div>
       </div>
+    </section>
+
+    <section class="panel" id="panel-schedule">
+      <div class="card">
+        <div class="card-head"><h3>📅 缴费计划<span style="font-size:14px;color:#64748b;font-weight:400;margin-left:10px" id="scheduleSub"></span></h3>
+          <div class="card-actions">
+            <select id="scheduleRange">
+              <option value="90">未来 3 个月</option><option value="180">未来 6 个月</option>
+              <option value="365" selected>未来 12 个月</option><option value="1095">未来 3 年</option>
+              <option value="all">全部未缴</option><option value="overdue">仅逾期</option>
+            </select>
+            <select id="scheduleClient"><option value="">全部客户</option></select>
+            <button class="btn sm" id="btnExportSchedule">导出 Excel</button>
+          </div></div>
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>截止日</th><th>剩余</th><th>客户</th><th>专利名称</th><th>申请号</th>
+            <th>类型</th><th>年度</th><th>官费</th><th>减免</th><th>应缴</th>
+            <th>滞纳金</th><th>合计</th><th style="width:100px">操作</th>
+          </tr></thead><tbody id="scheduleBody"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-report">
+      <div class="card">
+        <div class="card-head"><h3>📈 周期缴费报表</h3>
+          <div class="card-actions">
+            <select id="reportYear"></select>
+            <select id="reportClient"><option value="">全部客户</option></select>
+            <button class="btn sm" id="btnExportReport">导出 Excel</button>
+          </div></div>
+        <div class="card-body"><div class="q-grid" id="reportGrid"></div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-settings">
+      <div class="card">
+        <div class="card-head"><h3>📐 专利年费规则</h3></div>
+        <div class="card-body rules">
+          <h4>一、专利年度</h4>
+          <p>自申请日起算，第 N 年度 = <code>申请日 + (N-1) 年</code> 至 <code>申请日 + N 年 - 1 天</code>。</p>
+          <h4>二、缴费截止日</h4>
+          <p>年费应当在上一年度期满前缴纳，<b>缴费期限届满日 = 申请日在该年的对应日</b>。</p>
+          <h4>三、滞纳金</h4>
+          <p>逾期 6 个月宽限期内，每超 1 个月加收当年全额年费的 <b>5%</b>（最高 25%）。超 6 个月未缴，专利权终止。</p>
+          <h4>四、费减政策</h4>
+          <p>小微企业减 70%，个人减 85%。<b>减免覆盖：自授权当年起 10 个专利年度</b>。</p>
+          <p><b>授权日为空 → 视为不享受减免。</b></p>
+          <h4>五、保护年限上限</h4>
+          <p>发明 20 年，实用新型 10 年，外观设计 15 年。</p>
+          <h4>六、年费标准（元/年）</h4>
+          <table style="margin-top:8px;font-size:14px">
+            <thead><tr><th>类型</th><th>年度区间</th><th>标准</th></tr></thead>
+            <tbody>
+              <tr><td rowspan="6">发明</td><td>1–3</td><td class="num">900</td></tr>
+              <tr><td>4–6</td><td class="num">1,200</td></tr>
+              <tr><td>7–9</td><td class="num">2,000</td></tr>
+              <tr><td>10–12</td><td class="num">4,000</td></tr>
+              <tr><td>13–15</td><td class="num">6,000</td></tr>
+              <tr><td>16–20</td><td class="num">8,000</td></tr>
+              <tr><td rowspan="4">实用新型</td><td>1–3</td><td class="num">600</td></tr>
+              <tr><td>4–5</td><td class="num">900</td></tr>
+              <tr><td>6–8</td><td class="num">1,200</td></tr>
+              <tr><td>9–10</td><td class="num">2,000</td></tr>
+              <tr><td rowspan="5">外观设计</td><td>1–3</td><td class="num">600</td></tr>
+              <tr><td>4–5</td><td class="num">900</td></tr>
+              <tr><td>6–8</td><td class="num">1,200</td></tr>
+              <tr><td>9–10</td><td class="num">2,000</td></tr>
+              <tr><td>11–15</td><td class="num">3,000</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== 商标模块 ==================== -->
+  <div id="module-trademark" style="display:none">
+    <div class="card" style="padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <button class="btn" id="tmBtnAdd">＋ 新增商标</button>
+      <button class="btn ghost" id="tmBtnTemplate">📄 下载模板</button>
+      <button class="btn ghost" id="tmBtnImport">📥 导入 Excel</button>
+      <button class="btn ghost" id="tmBtnExportAll">📤 导出 Excel</button>
+      <input type="file" id="tmFileInput" accept=".xlsx,.xls,.csv,.json" hidden>
     </div>
-  </section>
+    <nav class="tabs">
+      <button class="tab active" data-tab="tm-dashboard">📊 看板</button>
+      <button class="tab" data-tab="tm-ledger">📋 商标台账</button>
+      <button class="tab" data-tab="tm-schedule">📅 续展计划</button>
+      <button class="tab" data-tab="tm-report">📈 续展报表</button>
+      <button class="tab" data-tab="tm-client">👥 客户报表</button>
+      <button class="tab" data-tab="tm-settings">⚙️ 规则说明</button>
+    </nav>
+
+    <section class="panel active" id="panel-tm-dashboard">
+      <div class="stat-grid" id="tmStatGrid"></div>
+      <div class="card">
+        <div class="card-head"><h3>⏰ 续展提醒</h3>
+          <div class="card-actions"><label>范围
+            <select id="tmAlertHorizon">
+              <option value="180">未来 6 个月</option>
+              <option value="365" selected>未来 12 个月</option>
+              <option value="730">未来 24 个月</option>
+              <option value="99999">全部待办</option>
+            </select></label></div></div>
+        <div id="tmAlertList"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-tm-ledger">
+      <div class="card">
+        <div class="card-head"><h3>📋 商标台账</h3>
+          <div class="seg" id="tmLedgerScope">
+            <button class="seg-btn active" data-scope="active">监控中 <span class="cnt" id="tmCntActive">0</span></button>
+            <button class="seg-btn" data-scope="archived">已归档 <span class="cnt" id="tmCntArchived">0</span></button>
+            <button class="seg-btn" data-scope="all">全部 <span class="cnt" id="tmCntAll">0</span></button>
+          </div></div>
+        <div class="filter-bar">
+          <div class="fi fi-search"><label>关键词</label>
+            <input type="text" id="tmSearch" placeholder="🔍 商标名称 / 注册号 / 客户…"></div>
+          <div class="fi"><label>客户</label><select id="tmClient"><option value="">全部</option></select></div>
+          <div class="fi"><label>类别</label><select id="tmClass"><option value="">全部</option></select></div>
+          <div class="fi"><label>状态</label>
+            <select id="tmStatus"><option value="">全部</option>
+              <option value="early">尚早</option>
+              <option value="renewable">可续展</option>
+              <option value="grace">宽展期</option>
+              <option value="expired">已过期</option></select></div>
+          <div class="fi fi-date"><label>到期日 ≥</label><input type="date" id="tmExpiryFrom"></div>
+          <div class="fi fi-date"><label>到期日 ≤</label><input type="date" id="tmExpiryTo"></div>
+          <div class="fi"><label>&nbsp;</label>
+            <button class="btn ghost sm" id="tmBtnResetFilters">重置筛选</button></div>
+        </div>
+        <div class="bulk-bar" id="tmBulkBar" hidden>
+          <span class="info">已选中 <b id="tmSelCount">0</b> 件</span>
+          <button class="btn sm amber" id="tmBulkArchive">📦 归档</button>
+          <button class="btn sm ok" id="tmBulkRestore">↩ 恢复监控</button>
+          <button class="btn sm" id="tmBulkRenew">✓ 批量标记已续展</button>
+          <button class="btn sm ghost" id="tmBulkExport">导出选中</button>
+          <button class="btn sm danger" id="tmBulkDelete">🗑 批量删除</button>
+          <button class="btn sm ghost" id="tmBulkClear">取消选择</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr class="group-row">
+                <th colspan="2" class="g-act" style="background:#fff;color:#94a3b8">选择</th>
+                <th colspan="5" class="g-basic">📌 基本信息</th>
+                <th colspan="3" class="g-todo">🔔 待办提醒</th>
+                <th colspan="2" class="g-hist">📜 历史情况</th>
+                <th class="g-act">操作</th>
+              </tr>
+              <tr class="col-row">
+                <th class="c-act" style="width:42px"><input type="checkbox" id="tmCheckAll"></th>
+                <th class="c-act" style="width:50px">#</th>
+                <th class="c-basic">商标名称</th>
+                <th class="c-basic">注册号</th>
+                <th class="c-basic">类别</th>
+                <th class="c-basic">客户</th>
+                <th class="c-basic">核准注册日</th>
+                <th class="c-todo first">到期日</th>
+                <th class="c-todo">状态</th>
+                <th class="c-todo last">应缴费用</th>
+                <th class="c-hist">上次续展</th>
+                <th class="c-hist">注册年限</th>
+                <th class="c-act" style="width:130px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tmLedgerBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-tm-schedule">
+      <div class="card">
+        <div class="card-head"><h3>📅 续展计划<span style="font-size:14px;color:#64748b;font-weight:400;margin-left:10px" id="tmScheduleSub"></span></h3>
+          <div class="card-actions">
+            <select id="tmScheduleRange">
+              <option value="365">未来 12 个月</option>
+              <option value="730" selected>未来 24 个月</option>
+              <option value="1095">未来 36 个月</option>
+              <option value="all">全部待续展</option>
+              <option value="grace">仅宽展期</option>
+              <option value="expired">已过期</option>
+            </select>
+            <select id="tmScheduleClient"><option value="">全部客户</option></select>
+            <button class="btn sm" id="tmBtnExportSchedule">导出 Excel</button>
+          </div></div>
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>到期日</th><th>剩余</th><th>客户</th><th>商标名称</th><th>注册号</th>
+            <th>类别</th><th>状态</th><th>续展费</th><th>迟延费</th><th>合计</th>
+            <th style="width:100px">操作</th>
+          </tr></thead><tbody id="tmScheduleBody"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-tm-report">
+      <div class="card">
+        <div class="card-head"><h3>📈 年度续展报表</h3>
+          <div class="card-actions">
+            <select id="tmReportYear"></select>
+            <select id="tmReportClient"><option value="">全部客户</option></select>
+            <button class="btn sm" id="tmBtnExportReport">导出 Excel</button>
+          </div></div>
+        <div class="card-body"><div class="q-grid" id="tmReportGrid"></div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-tm-client">
+      <div class="card">
+        <div class="card-head"><h3>👥 客户维度报表</h3>
+          <div class="card-actions">
+            <select id="tmClientReportYear"></select>
+            <button class="btn sm" id="tmBtnExportClientReport">导出 Excel</button>
+          </div></div>
+        <div class="card-body"><div class="q-grid" id="tmClientReportGrid"></div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-tm-settings">
+      <div class="card">
+        <div class="card-head"><h3>📐 商标续展规则</h3></div>
+        <div class="card-body rules">
+          <h4>一、注册商标有效期</h4>
+          <p>注册商标有效期为 <b>10 年</b>，自核准注册之日起计算。</p>
+          <p><b>专用权到期日 = 核准注册日 + 10 年</b></p>
+
+          <h4>二、续展时间节点</h4>
+          <p>根据《商标法》第 40 条，注册商标有效期满需要继续使用的，应当在期满前 <b>12 个月内</b>办理续展手续。</p>
+          <ul>
+            <li><b>续展期开始日</b> = 到期日 - 12 个月（最早可提交续展日期）</li>
+            <li><b>宽展期结束日</b> = 到期日 + 6 个月（最后救命期限）</li>
+          </ul>
+
+          <h4>三、四个状态</h4>
+          <table style="margin-top:8px;font-size:14px">
+            <thead><tr><th>状态</th><th>时间段</th><th>费用</th></tr></thead>
+            <tbody>
+              <tr><td>尚早</td><td>距今 > 12 个月</td><td>—</td></tr>
+              <tr><td>可续展</td><td>距到期 ≤ 12 个月，且未超到期日</td><td class="num">450 元</td></tr>
+              <tr><td style="color:#dc2626;font-weight:700">宽展期</td><td>到期日之后到 +6 个月</td><td class="num" style="color:#dc2626">675 元</td></tr>
+              <tr><td>已过期</td><td>到期日 + 6 个月之后</td><td>—</td></tr>
+            </tbody>
+          </table>
+
+          <h4>四、续展费用标准</h4>
+          <ul>
+            <li>正常续展期内提交：<b>450 元 / 类</b></li>
+            <li>宽展期提交：<b>450 + 225 = 675 元 / 类</b>（含迟延费 225 元）</li>
+          </ul>
+          <p>商标续展<b>无费减政策</b>。每件商标按单类计算，一个 logo 在多类注册即为多个独立的注册号，需分别续展。</p>
+
+          <h4>五、标记已续展</h4>
+          <p>完成续展后，点击台账中的"标记已续展"按钮：</p>
+          <ul>
+            <li>新的到期日 = <b>旧的到期日 + 10 年</b>（不是提交日 + 10 年）</li>
+            <li>状态自动回到"尚早"</li>
+            <li>记录保留，可无限续展</li>
+          </ul>
+          <div class="note">⚠️ 即使拖到宽展期最后一天提交，新的到期日仍按旧到期日 + 10 年计算，中间拖延的时间不补。</div>
+
+          <h4>六、归档</h4>
+          <p>不再续展的商标直接归档，记录保留但不参与提醒。可随时恢复监控。</p>
+
+          <h4>七、导入导出与去重规则</h4>
+          <p>支持 <b>Excel（.xlsx / .xls）</b> 和 CSV 两种格式。</p>
+          <p><b>模板与导出的列顺序：</b></p>
+          <ul>
+            <li>商标名称</li><li>注册号</li><li>类别</li><li>客户</li>
+            <li>核准注册日</li><li>上次续展日</li><li>备注</li>
+          </ul>
+          <p><b>注册号唯一：</b>导入时按<b>注册号</b>匹配已有记录，<b>存在则覆盖，不存在则新增</b>。</p>
+          <p><b>上次续展日取大值：</b>覆盖时取新旧较大值，不会因导入旧数据而倒退。</p>
+          <p><b>类别号校验：</b>必须是 1–45 的整数。</p>
+          <p>导入完成后会弹出详细报告，列出每一条被覆盖记录的变化字段和无法识别日期的记录。</p>
+          <p><b>核准注册日、上次续展日</b>支持以下 8 种格式：</p>
+          <ul>
+            <li><code>20180520</code>（8 位纯数字）</li>
+            <li><code>2018-05-20</code> / <code>2018-5-20</code>（横杠）</li>
+            <li><code>2018/05/20</code> / <code>2018/5/20</code>（斜杠）</li>
+            <li><code>2018.05.20</code> / <code>2018.5.20</code>（点号）</li>
+            <li><code>2018年5月20日</code>（中文年月日）</li>
+          </ul>
+          <p>Excel 单元格带时间戳格式（如 <code>2018-05-20 00:00:00</code>）会剥离时间部分后校验。</p>
+        </div>
+      </div>
+    </section>
+  </div>
 </div>
 
+<!-- 专利新增/编辑 -->
 <div class="overlay" id="modalPatent">
   <div class="modal">
     <div class="modal-head"><h3 id="patentModalTitle">新增专利</h3>
@@ -472,8 +675,7 @@ tbody tr.archived-row{opacity:.62}
         <input type="date" id="f_grantDate">
         <span class="hint">享受费减的专利必须填写；不享受费减可留空</span></div>
       <div class="field full"><label>申请人 / 客户 <span class="req">*</span></label>
-        <input type="text" id="f_client" list="clientOptions" autocomplete="off"
-               placeholder="选择已有或输入新客户">
+        <input type="text" id="f_client" list="clientOptions" autocomplete="off">
         <span class="hint">💡 已录入的客户会自动出现在下拉候选</span></div>
       <div class="field"><label>费减比例</label>
         <select id="f_reduction"><option value="0">不减缴</option>
@@ -482,8 +684,7 @@ tbody tr.archived-row{opacity:.62}
       <div class="field"><label>状态</label>
         <select id="f_status"><option>有效</option><option>放弃监控</option></select></div>
       <div class="field"><label>已缴年度</label>
-        <input type="number" id="f_paidYear" value="0" min="0" max="30" step="1">
-        <span class="hint">最后一次缴过年费的最高年度，0 = 一年未缴</span></div>
+        <input type="number" id="f_paidYear" value="0" min="0" max="30" step="1"></div>
       <div class="field full"><label>备注</label>
         <textarea id="f_notes" placeholder="代理机构、内部编号等"></textarea></div>
     </div></div>
@@ -494,6 +695,7 @@ tbody tr.archived-row{opacity:.62}
   </div>
 </div>
 
+<!-- 专利详情 -->
 <div class="overlay" id="modalDetail">
   <div class="modal wide">
     <div class="modal-head"><h3 id="detailTitle">专利详情</h3>
@@ -503,6 +705,7 @@ tbody tr.archived-row{opacity:.62}
   </div>
 </div>
 
+<!-- 专利批量标记已缴 -->
 <div class="overlay" id="modalPaid">
   <div class="modal narrow">
     <div class="modal-head"><h3>批量标记已缴</h3>
@@ -521,7 +724,51 @@ tbody tr.archived-row{opacity:.62}
   </div>
 </div>
 
+<!-- 商标新增/编辑 -->
+<div class="overlay" id="tmModal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="tmModalTitle">新增商标</h3>
+      <button class="close" data-close>×</button></div>
+    <div class="modal-body"><div class="form-grid">
+      <div class="field full"><label>商标名称 <span class="req">*</span></label>
+        <input type="text" id="tm_name" placeholder="文字商标填文字；图形商标填「图形」或简述"></div>
+      <div class="field"><label>注册号 <span class="req">*</span></label>
+        <input type="text" id="tm_regNo" placeholder="12345678"></div>
+      <div class="field"><label>类别号 <span class="req">*</span></label>
+        <input type="number" id="tm_classNo" min="1" max="45" step="1" placeholder="1–45"></div>
+      <div class="field"><label>核准注册日 <span class="req">*</span></label>
+        <input type="date" id="tm_regDate"></div>
+      <div class="field"><label>上次续展日</label>
+        <input type="date" id="tm_lastRenewed">
+        <span class="hint">空 = 从未续展过</span></div>
+      <div class="field full"><label>客户 / 权利人 <span class="req">*</span></label>
+        <input type="text" id="tm_client" list="tmClientOptions" autocomplete="off"></div>
+      <div class="field"><label>联系人</label>
+        <input type="text" id="tm_contact"></div>
+      <div class="field"><label>联系电话</label>
+        <input type="text" id="tm_phone"></div>
+      <div class="field full"><label>备注</label>
+        <textarea id="tm_notes" placeholder="代理机构、内部编号等"></textarea></div>
+    </div></div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-close>取消</button>
+      <button class="btn" id="tmBtnSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 商标详情 -->
+<div class="overlay" id="tmModalDetail">
+  <div class="modal wide">
+    <div class="modal-head"><h3 id="tmDetailTitle">商标详情</h3>
+      <button class="close" data-close>×</button></div>
+    <div class="modal-body" id="tmDetailBody"></div>
+    <div class="modal-foot"><button class="btn ghost" data-close>关闭</button></div>
+  </div>
+</div>
+
 <datalist id="clientOptions"></datalist>
+<datalist id="tmClientOptions"></datalist>
 
 <script>
 var SUPABASE_URL = 'https://vqbwdrfioxlaaxaeqtxh.supabase.co';
@@ -539,6 +786,9 @@ var FEE_TABLE = {
 };
 var TYPE_BADGE = { '发明':'blue', '实用新型':'cyan', '外观设计':'purple' };
 var REDUCTION_YEARS = 10;
+var TM_RENEW_FEE = 450;
+var TM_LATE_FEE = 225;
+var TM_GRACE_FEE = 675;
 
 function isValidYMD(y, mo, d){
   if(y < 1900 || y > 2200) return false;
@@ -559,8 +809,8 @@ function parseDate(s){
   if(!dateOnly) return null;
   var y, mo, d, m;
   if(/^\d{8}$/.test(dateOnly)){
-    y = +dateOnly.slice(0,4); mo = +dateOnly.slice(4,6); d = +dateOnly.slice(6,8);
-    if(isValidYMD(y, mo, d)) return new Date(y, mo-1, d);
+    y=+dateOnly.slice(0,4);mo=+dateOnly.slice(4,6);d=+dateOnly.slice(6,8);
+    if(isValidYMD(y,mo,d)) return new Date(y,mo-1,d);
     return null;
   }
   m = dateOnly.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
@@ -627,9 +877,7 @@ function feeForYear(p, n){
   var applyRed = 0;
   if(reduction > 0){
     var gy = grantYearOf(p);
-    if(gy != null && n >= gy && n <= gy + REDUCTION_YEARS - 1){
-      applyRed = reduction;
-    }
+    if(gy != null && n >= gy && n <= gy + REDUCTION_YEARS - 1) applyRed = reduction;
   }
   return {base:base, reduction:applyRed, fee:Math.round(base*(1-applyRed/100))};
 }
@@ -650,13 +898,9 @@ function nextDueInfo(p, asOf){
     if(f==null){ n++; continue; }
     var daysLeft=daysBetween(asOf, due);
     var late=calcLate(fmtDate(due), f.fee, asOf);
-    return {
-      year:n, dueDate:fmtDate(due),
-      baseFee:f.base, reduction:f.reduction, fee:f.fee,
-      daysLeft:daysLeft,
-      lateMonths:late.months, lateFee:late.amount, terminated:late.terminated,
-      total:f.fee+late.amount
-    };
+    return {year:n, dueDate:fmtDate(due), baseFee:f.base, reduction:f.reduction, fee:f.fee,
+      daysLeft:daysLeft, lateMonths:late.months, lateFee:late.amount, terminated:late.terminated,
+      total:f.fee+late.amount};
   }
   return null;
 }
@@ -678,11 +922,36 @@ function statusMeta(it){
 }
 function monitored(){ return state.patents.filter(function(p){return !p.archived;}); }
 
-var state = { patents: [], settings: { alertHorizon: 90 }, user: null };
+/* ==================== 商标状态与费用 ==================== */
+function tmStatus(t, asOf){
+  var expiry = parseDate(t.expiryDate);
+  if(!expiry) return {code:'invalid', label:'日期错误', cls:'gray', fee:0, daysLeft:0};
+  var renewStart = addMonths(expiry, -12);
+  var graceEnd = addMonths(expiry, 6);
+  var daysLeft = daysBetween(asOf, expiry);
+  if(asOf < renewStart){
+    return {code:'early', label:'尚早', cls:'gray', fee:0, daysLeft:daysLeft, expiryDate:expiry, renewStart:renewStart, graceEnd:graceEnd};
+  }
+  if(asOf <= expiry){
+    return {code:'renewable', label:'可续展', cls:'amber', fee:TM_RENEW_FEE, daysLeft:daysLeft, expiryDate:expiry, renewStart:renewStart, graceEnd:graceEnd};
+  }
+  if(asOf <= graceEnd){
+    return {code:'grace', label:'宽展期', cls:'red', fee:TM_GRACE_FEE, daysLeft:daysLeft, expiryDate:expiry, renewStart:renewStart, graceEnd:graceEnd};
+  }
+  return {code:'expired', label:'已过期', cls:'gray', fee:0, daysLeft:daysLeft, expiryDate:expiry, renewStart:renewStart, graceEnd:graceEnd};
+}
+function tmMonitored(){ return state.trademarks.filter(function(t){return !t.archived;}); }
+
+var state = { patents: [], trademarks: [], settings: { alertHorizon: 90, tmAlertHorizon: 365 }, user: null };
 var editingId = null;
+var tmEditingId = null;
 var ledgerScope = 'active';
+var tmLedgerScope = 'active';
 var selectedIds = new Set();
+var tmSelectedIds = new Set();
 var scheduleCache = [];
+var tmScheduleCache = [];
+var currentModule = 'patent';
 var authMode = 'login';
 
 function showAuthMsg(msg, type){
@@ -715,9 +984,8 @@ async function handleAuth(){
       var r2 = await sb.auth.signUp({ email:email, password:password,
         options:{ emailRedirectTo: window.location.href } });
       if(r2.error) throw r2.error;
-      if(r2.data.user && r2.data.session){
-        showAuthMsg('注册成功，正在进入…','success');
-      } else {
+      if(r2.data.user && r2.data.session){ showAuthMsg('注册成功，正在进入…','success'); }
+      else {
         showAuthMsg('注册成功！请查收邮箱确认链接后再登录。','success');
         btn.disabled=false; btn.textContent='注册';
         return;
@@ -731,7 +999,7 @@ async function handleAuth(){
 }
 async function logout(){
   if(sb) await sb.auth.signOut();
-  state.user=null; state.patents=[];
+  state.user=null; state.patents=[]; state.trademarks=[];
   document.getElementById('app').classList.remove('ready');
   document.getElementById('authScreen').style.display='flex';
 }
@@ -741,9 +1009,11 @@ function showApp(user){
   document.getElementById('authScreen').style.display='none';
   document.getElementById('app').classList.add('ready');
 }
+
+/* ==================== 数据加载 ==================== */
 async function loadPatents(){
   var res = await sb.from('patents').select('*').order('created_at',{ascending:true});
-  if(res.error){ console.error('加载失败',res.error); return false; }
+  if(res.error){ console.error('专利加载失败',res.error); return false; }
   state.patents=(res.data||[]).map(function(row){
     return {id:row.id, name:row.name, appNo:row.app_no, appDate:row.app_date,
       grantDate:row.grant_date||'', type:row.type, client:row.client,
@@ -753,6 +1023,20 @@ async function loadPatents(){
   });
   return true;
 }
+async function loadTrademarks(){
+  var res = await sb.from('trademarks').select('*').order('created_at',{ascending:true});
+  if(res.error){ console.error('商标加载失败',res.error); return false; }
+  state.trademarks=(res.data||[]).map(function(row){
+    return {id:row.id, name:row.name, regNo:row.reg_no, classNo:row.class_no,
+      client:row.client, regDate:row.reg_date, expiryDate:row.expiry_date,
+      lastRenewedAt:row.last_renewed_at||'', archived:row.archived,
+      archivedAt:row.archived_at||'', notes:row.notes||'',
+      contact:row.contact||'', phone:row.phone||''};
+  });
+  return true;
+}
+
+/* ==================== 专利 CRUD ==================== */
 async function upsertPatent(p){
   var row={id:p.id, user_id:state.user.id, name:p.name, app_no:p.appNo,
     app_date:p.appDate, grant_date:p.grantDate||'', type:p.type, client:p.client,
@@ -781,16 +1065,80 @@ async function setPaidYear(patentId, year){
   var ok=await updatePatentField(patentId,{paid_year:y});
   if(ok){ p.paidYear=y; renderAll(); }
 }
+
+/* ==================== 商标 CRUD ==================== */
+async function upsertTrademark(t){
+  var row={id:t.id, user_id:state.user.id, name:t.name, reg_no:t.regNo,
+    class_no:t.classNo, client:t.client, reg_date:t.regDate,
+    expiry_date:t.expiryDate, last_renewed_at:t.lastRenewedAt||'',
+    archived:!!t.archived, archived_at:t.archivedAt||'',
+    notes:t.notes||'', contact:t.contact||'', phone:t.phone||''};
+  var res = await sb.from('trademarks').upsert(row,{onConflict:'id'});
+  if(res.error){ alert('保存失败：'+res.error.message); return false; }
+  return true;
+}
+async function deleteTrademarkById(id){
+  var res = await sb.from('trademarks').delete().eq('id',id);
+  if(res.error){ alert('删除失败：'+res.error.message); return false; }
+  return true;
+}
+async function updateTrademarkField(id, fields){
+  var res = await sb.from('trademarks').update(fields).eq('id',id);
+  if(res.error){ alert('更新失败：'+res.error.message); return false; }
+  return true;
+}
+async function markTrademarkRenewed(tmId){
+  var t = state.trademarks.find(function(x){return x.id===tmId;});
+  if(!t) return;
+  var oldExpiry = parseDate(t.expiryDate);
+  if(!oldExpiry){ alert('到期日无法解析，无法标记续展'); return; }
+  var newExpiry = addYears(oldExpiry, 10);
+  var today = fmtDate(new Date());
+  if(!confirm(
+    '确定标记该商标已续展？\n\n' +
+    '商标：' + t.name + ' (' + t.regNo + ')\n' +
+    '旧到期日：' + t.expiryDate + '\n' +
+    '新到期日：' + fmtDate(newExpiry) + '\n\n' +
+    '（新到期日按旧到期日 + 10 年计算）'
+  )) return;
+  var ok = await updateTrademarkField(tmId, {
+    expiry_date: fmtDate(newExpiry),
+    last_renewed_at: today
+  });
+  if(ok){
+    t.expiryDate = fmtDate(newExpiry);
+    t.lastRenewedAt = today;
+    renderAll();
+  }
+}
+
+/* ==================== 客户下拉 ==================== */
 function renderClientOptions(){
-  var clients=Array.from(new Set(state.patents.map(function(p){return (p.client||'').trim();}).filter(Boolean))).sort();
-  ['ledgerClient','scheduleClient','reportClient'].forEach(function(id){
-    var sel=document.getElementById(id); var cur=sel.value;
+  var pClients = state.patents.map(function(p){return (p.client||'').trim();});
+  var tClients = state.trademarks.map(function(t){return (t.client||'').trim();});
+  var clients=Array.from(new Set(pClients.concat(tClients).filter(Boolean))).sort();
+  ['ledgerClient','scheduleClient','reportClient','tmClient','tmScheduleClient','tmReportClient'].forEach(function(id){
+    var sel=document.getElementById(id); if(!sel) return;
+    var cur=sel.value;
     sel.innerHTML='<option value="">全部客户</option>'+
       clients.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join('');
     if(clients.indexOf(cur)>=0) sel.value=cur;
   });
   document.getElementById('clientOptions').innerHTML=clients.map(function(c){return '<option value="'+esc(c)+'"></option>';}).join('');
+  document.getElementById('tmClientOptions').innerHTML=clients.map(function(c){return '<option value="'+esc(c)+'"></option>';}).join('');
+
+  // 商标类别下拉
+  var tmClassSel = document.getElementById('tmClass');
+  if(tmClassSel){
+    var cur2 = tmClassSel.value;
+    var classes = Array.from(new Set(state.trademarks.map(function(t){return (t.classNo||'').trim();}).filter(Boolean))).sort(function(a,b){return Number(a)-Number(b);});
+    tmClassSel.innerHTML='<option value="">全部</option>'+
+      classes.map(function(c){return '<option value="'+esc(c)+'">第 '+esc(c)+' 类</option>';}).join('');
+    if(classes.indexOf(cur2)>=0) tmClassSel.value=cur2;
+  }
 }
+
+/* ==================== 专利看板 ==================== */
 function renderDashboard(){
   var today=startOfDay(new Date());
   var list=monitored();
@@ -817,6 +1165,7 @@ function renderDashboard(){
     '<div class="stat gray"><div class="stat-label">已归档</div>'+
       '<div class="stat-value">'+archived+'<small>件</small></div>'+
       '<div class="stat-sub">记录保留，不参与提醒</div></div>';
+
   var horizon=Number(state.settings.alertHorizon)||90;
   var alertList=all.filter(function(it){return it.daysLeft<0||it.daysLeft<=horizon;})
     .sort(function(a,b){return a.daysLeft-b.daysLeft;});
@@ -844,6 +1193,8 @@ function renderDashboard(){
     });
   });
 }
+
+/* ==================== 专利台账 ==================== */
 function filterPatents(){
   var q=document.getElementById('ledgerSearch').value.trim().toLowerCase();
   var fClient=document.getElementById('ledgerClient').value;
@@ -907,9 +1258,7 @@ function renderLedger(){
       nextYearStr='第 '+next.year+' 年';
       nextDate=next.dueDate;
       nextAmt='¥'+money(next.total);
-    } else {
-      statusHtml='<span class="badge green">全部已缴</span>';
-    }
+    } else { statusHtml='<span class="badge green">全部已缴</span>'; }
     var red=p.reduction>0?'<span class="badge amber">减 '+p.reduction+'%</span>':'<span class="mono">—</span>';
     var paidY=paidYear(p);
     var paidHtml='<input type="number" class="paid-input" value="'+paidY+'" min="0" max="30" data-paid-id="'+p.id+'">';
@@ -958,9 +1307,7 @@ function renderLedger(){
       if(isNaN(v)||v<0) v=0;
       setPaidYear(id, v);
     });
-    inp.addEventListener('keydown',function(e){
-      if(e.key==='Enter') inp.blur();
-    });
+    inp.addEventListener('keydown',function(e){ if(e.key==='Enter') inp.blur(); });
   });
   updateBulkBar(); syncCheckAll();
 }
@@ -980,6 +1327,8 @@ function clearSelection(){
   document.getElementById('checkAll').checked=false;
   document.getElementById('checkAll').indeterminate=false;
 }
+
+/* ==================== 专利缴费计划 ==================== */
 function renderSchedule(){
   var today=startOfDay(new Date());
   var range=document.getElementById('scheduleRange').value;
@@ -1029,9 +1378,7 @@ function renderSchedule(){
   });
 }
 
-/* =========================================================
-   周期报表 —— 同时展示所选年份和下一年度的季度明细
-   ========================================================= */
+/* ==================== 专利周期报表（双年） ==================== */
 function renderReport(){
   var yearSel=document.getElementById('reportYear');
   var today=startOfDay(new Date());
@@ -1094,6 +1441,8 @@ function renderReport(){
   html += buildYearSection(y2);
   document.getElementById('reportGrid').innerHTML = html;
 }
+
+/* ==================== 专利表单 ==================== */
 function openPatentModal(id){
   editingId=id||null;
   var p=id?state.patents.find(function(x){return x.id===id;}):null;
@@ -1123,7 +1472,7 @@ async function savePatent(){
   if(!client) return alert('请填写客户');
   var reduction=Number(document.getElementById('f_reduction').value)||0;
   if(reduction>0 && !grantDate){
-    if(!confirm('该专利设置了费减比例，但未填写授权日。\n\n按规则，未填写授权日视为不享受减免，年费将按标准费率计算。\n\n确定要这样保存吗？')) return;
+    if(!confirm('该专利设置了费减比例，但未填写授权日。\n\n按规则，未填写授权日视为不享受减免。\n\n确定要这样保存吗？')) return;
   }
   var status=document.getElementById('f_status').value;
   var paidY=Number(document.getElementById('f_paidYear').value)||0;
@@ -1132,9 +1481,7 @@ async function savePatent(){
     id: editingId || ('P'+Date.now()+Math.random().toString(36).slice(2,7)),
     name:name, appNo:appNo, appDate:appDate, grantDate:grantDate,
     type:document.getElementById('f_type').value,
-    client:client,
-    reduction:reduction,
-    status: status,
+    client:client, reduction:reduction, status: status,
     archived: archived, archivedAt: archived?fmtDate(new Date()):'',
     paidYear: paidY,
     notes:document.getElementById('f_notes').value.trim(),
@@ -1155,11 +1502,13 @@ async function deletePatent(id){
 }
 async function bulkDelete(){
   var ids=Array.from(selectedIds); if(!ids.length) return;
-  if(!confirm('⚠️ 确定永久删除选中的 '+ids.length+' 件专利？\n\n此操作不可恢复，建议改用「归档」以保留记录。')) return;
+  if(!confirm('⚠️ 确定永久删除选中的 '+ids.length+' 件专利？\n\n建议改用「归档」以保留记录。')) return;
   var res = await sb.from('patents').delete().in('id',ids);
   if(res.error){ alert('删除失败：'+res.error.message); return; }
   selectedIds.clear(); await loadPatents(); renderAll();
 }
+
+/* ==================== 专利详情 ==================== */
 function openDetail(id){
   var p=state.patents.find(function(x){return x.id===id;}); if(!p) return;
   var today=startOfDay(new Date());
@@ -1172,18 +1521,13 @@ function openDetail(id){
 
   var reductionText = '不减缴';
   if(p.reduction > 0){
-    if(gy != null){
-      reductionText = '减缴 '+p.reduction+'%（自第 '+gy+' 年度起 10 个年度，即第 '+gy+'–'+(gy+REDUCTION_YEARS-1)+' 年度）';
-    } else {
-      reductionText = '减缴 '+p.reduction+'%（未填授权日，视为不享受减免）';
-    }
+    if(gy != null) reductionText = '减缴 '+p.reduction+'%（自第 '+gy+' 年度起 10 个年度，即第 '+gy+'–'+(gy+REDUCTION_YEARS-1)+' 年度）';
+    else reductionText = '减缴 '+p.reduction+'%（未填授权日，视为不享受减免）';
   }
 
   var info='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:22px">'+
-    [['申请号',p.appNo],['类型',p.type],['申请日',p.appDate],
-     ['授权日',p.grantDate||'（空）'],
-     ['客户',p.client],['费减',reductionText],
-     ['已缴年度','第 '+currentPaid+' 年'],
+    [['申请号',p.appNo],['类型',p.type],['申请日',p.appDate],['授权日',p.grantDate||'（空）'],
+     ['客户',p.client],['费减',reductionText],['已缴年度','第 '+currentPaid+' 年'],
      ['状态',p.status||'有效'],['监控',p.archived?'已归档':'监控中']
     ].map(function(kv){
       return '<div><div style="font-size:13px;color:#64748b;font-weight:600">'+kv[0]+'</div>'+
@@ -1203,7 +1547,7 @@ function openDetail(id){
       var paid = n<=currentPaid;
       var isNext = n===currentPaid+1 && currentPaid+1<=max;
       var late = !paid && due && today>due ? calcLate(fmtDate(due), f.fee, today) : null;
-      var cls = paid ? 'paid' : (isNext ? (late&&late.months>0?'overdue':'next') : '');
+      var cls = paid ? 'done' : (isNext ? (late&&late.months>0?'danger':'active') : '');
       var tag = paid ? '<span class="badge green">已缴</span>' : isNext ?
         (late&&late.months>0?'<span class="badge red">逾期 '+late.months+' 月</span>':'<span class="badge blue">待缴</span>')
         : '<span class="badge gray">—</span>';
@@ -1216,7 +1560,7 @@ function openDetail(id){
           (inReductionRange?'<span class="badge amber" style="font-size:11px">费减覆盖</span>':'')+
         '</div>'+
         '<div class="d">'+fmtDate(start)+' ~ '+fmtDate(end)+' · 截止 '+fmtDate(due)+'</div></div>'+
-        '<div style="text-align:right"><div class="f">'+feeTxt+'</div><div style="margin-top:4px">'+tag+'</div></div></div>'+
+        '<div style="text-align:right"><div style="font-weight:700">'+feeTxt+'</div><div style="margin-top:4px">'+tag+'</div></div></div>'+
         '<div style="margin-top:8px">'+
           (paid?'<button class="btn sm ghost" data-unpaid="'+n+'">撤销已缴</button>':
                 '<button class="btn sm ok" data-dopay="'+n+'">标记已缴</button>')+
@@ -1236,15 +1580,12 @@ function openDetail(id){
 
   var body=document.getElementById('detailBody');
   body.querySelectorAll('[data-dopay]').forEach(function(b){
-    b.addEventListener('click',function(){
-      setPaidYear(p.id, Number(b.dataset.dopay)).then(function(){openDetail(p.id);});
-    });
+    b.addEventListener('click',function(){ setPaidYear(p.id, Number(b.dataset.dopay)).then(function(){openDetail(p.id);}); });
   });
   body.querySelectorAll('[data-unpaid]').forEach(function(b){
     b.addEventListener('click',function(){
       var n=Number(b.dataset.unpaid);
-      var newY=Math.max(0, n-1);
-      setPaidYear(p.id, newY).then(function(){openDetail(p.id);});
+      setPaidYear(p.id, Math.max(0, n-1)).then(function(){openDetail(p.id);});
     });
   });
   document.getElementById('btnEditFromDetail').addEventListener('click',function(){
@@ -1263,21 +1604,19 @@ function openDetail(id){
   document.getElementById('btnDeletePatent').addEventListener('click',function(){deletePatent(p.id);});
   document.getElementById('modalDetail').classList.add('show');
 }
+
+/* ==================== 专利批量操作 ==================== */
 async function bulkArchive(){
   var ids=Array.from(selectedIds); if(!ids.length) return;
   if(!confirm('确定将选中的 '+ids.length+' 件专利移入归档？')) return;
-  var res = await sb.from('patents').update({
-    archived:true, archived_at:fmtDate(new Date()), status:'放弃监控'
-  }).in('id',ids);
+  var res = await sb.from('patents').update({archived:true, archived_at:fmtDate(new Date()), status:'放弃监控'}).in('id',ids);
   if(res.error){ alert('归档失败：'+res.error.message); return; }
   selectedIds.clear(); await loadPatents(); renderAll();
 }
 async function bulkRestore(){
   var ids=Array.from(selectedIds); if(!ids.length) return;
   if(!confirm('确定恢复选中的 '+ids.length+' 件专利？')) return;
-  var res = await sb.from('patents').update({
-    archived:false, archived_at:'', status:'有效'
-  }).in('id',ids);
+  var res = await sb.from('patents').update({archived:false, archived_at:'', status:'有效'}).in('id',ids);
   if(res.error){ alert('恢复失败：'+res.error.message); return; }
   selectedIds.clear(); await loadPatents(); renderAll();
 }
@@ -1285,13 +1624,8 @@ async function bulkSetStatus(){
   var ids=Array.from(selectedIds); if(!ids.length) return;
   var st=document.getElementById('bulkStatusSel').value;
   var willArchive = (st === '放弃监控');
-  var msg = willArchive
-    ? '确定将 '+ids.length+' 件专利状态改为「放弃监控」并自动归档？'
-    : '确定将 '+ids.length+' 件专利状态改为「有效」并自动恢复监控？';
-  if(!confirm(msg)) return;
-  var patch = willArchive
-    ? {status:'放弃监控', archived:true, archived_at:fmtDate(new Date())}
-    : {status:'有效', archived:false, archived_at:''};
+  if(!confirm(willArchive?'确定将 '+ids.length+' 件专利状态改为「放弃监控」并自动归档？':'确定将 '+ids.length+' 件专利状态改为「有效」并自动恢复监控？')) return;
+  var patch = willArchive ? {status:'放弃监控', archived:true, archived_at:fmtDate(new Date())} : {status:'有效', archived:false, archived_at:''};
   var res = await sb.from('patents').update(patch).in('id',ids);
   if(res.error){ alert('更新失败：'+res.error.message); return; }
   selectedIds.clear(); await loadPatents(); renderAll();
@@ -1318,41 +1652,647 @@ function bulkExport(){
   if(!rows.length) return;
   var header=['专利名称','申请日','申请号','专利类型','客户','授权日','费减比例','已缴年度','备注'];
   var data=[header].concat(rows.map(function(p){
-    return [p.name, p.appDate, p.appNo, p.type,
-      p.client, p.grantDate||'', p.reduction||0,
-      paidYear(p), p.notes||''];
+    return [p.name, p.appDate, p.appNo, p.type, p.client, p.grantDate||'', p.reduction||0, paidYear(p), p.notes||''];
   }));
   exportXLSX('选中专利_'+fmtDate(new Date())+'.xlsx', data, '选中专利');
 }
 
-var HEADER_MAP = {
-  '专利名称':'name','名称':'name',
-  '申请号':'appNo','申请编号':'appNo',
-  '专利类型':'type','类型':'type',
-  '申请日':'appDate','申请日期':'appDate',
-  '授权日':'grantDate','授权日期':'grantDate',
-  '客户':'client','申请人':'client','申请人/客户':'client','申请人 / 客户':'client',
-  '费减比例':'reduction','减免':'reduction','费减':'reduction',
-  '状态':'status','法律状态':'status',
-  '已缴年度':'paidYear','已缴':'paidYear','已缴纳年度':'paidYear','缴费年度':'paidYear',
-  '备注':'notes','说明':'notes'
-};
-function normalizeDate(s){
-  if(!s) return '';
-  var d = parseDate(s);
-  return d ? fmtDate(d) : '';
+/* ==================== 商标看板 ==================== */
+function renderTmDashboard(){
+  var today=startOfDay(new Date());
+  var list=tmMonitored();
+  var stats = {early:0, renewable:0, grace:0, expired:0};
+  var feeTotal = {renewable:0, grace:0};
+  list.forEach(function(t){
+    var st = tmStatus(t, today);
+    if(stats[st.code] != null) stats[st.code]++;
+    if(st.code==='renewable') feeTotal.renewable += st.fee;
+    if(st.code==='grace') feeTotal.grace += st.fee;
+  });
+  var archived = state.trademarks.length - list.length;
+
+  document.getElementById('tmStatGrid').innerHTML=
+    '<div class="stat"><div class="stat-label">监控中商标</div>'+
+      '<div class="stat-value">'+list.length+'<small>件</small></div>'+
+      '<div class="stat-sub">客户 '+new Set(list.map(function(t){return t.client;})).size+' 家 · 已归档 '+archived+' 件</div></div>'+
+    '<div class="stat warn"><div class="stat-label">可续展（12 个月内）</div>'+
+      '<div class="stat-value">'+stats.renewable+'<small>笔</small></div>'+
+      '<div class="stat-sub">¥'+money(feeTotal.renewable)+'</div></div>'+
+    '<div class="stat danger"><div class="stat-label">宽展期（加收迟延费）</div>'+
+      '<div class="stat-value">'+stats.grace+'<small>笔</small></div>'+
+      '<div class="stat-sub">¥'+money(feeTotal.grace)+'</div></div>'+
+    '<div class="stat gray"><div class="stat-label">尚早 / 已过期 / 已归档</div>'+
+      '<div class="stat-value">'+(stats.early+stats.expired+archived)+'<small>件</small></div>'+
+      '<div class="stat-sub">尚早 '+stats.early+' · 已过期 '+stats.expired+' · 已归档 '+archived+'</div></div>';
+
+  var horizon=Number(state.settings.tmAlertHorizon)||365;
+  var alertItems = list.map(function(t){
+    return Object.assign({}, tmStatus(t, today), {tm:t});
+  }).filter(function(it){
+    return it.code==='grace' || it.code==='expired' || (it.daysLeft>=0 && it.daysLeft<=horizon);
+  });
+
+  // 排序：宽展期置顶 → 逾期（已过期）→ 按剩余天数升序
+  var order = {grace:0, expired:1, renewable:2, early:3};
+  alertItems.sort(function(a,b){
+    var oa = order[a.code] != null ? order[a.code] : 99;
+    var ob = order[b.code] != null ? order[b.code] : 99;
+    if(oa !== ob) return oa - ob;
+    return a.daysLeft - b.daysLeft;
+  });
+
+  var box=document.getElementById('tmAlertList');
+  if(!alertItems.length){
+    box.innerHTML='<div class="empty"><span class="icon">✅</span>该范围内暂无待续展商标</div>';
+    return;
+  }
+  box.innerHTML=alertItems.slice(0,80).map(function(it){
+    var cls='';
+    var bar='#2563eb';
+    if(it.code==='grace'){cls='grace';bar='#dc2626';}
+    else if(it.code==='expired'){bar='#94a3b8';}
+    else if(it.daysLeft<=90){bar='#d97706';}
+    var feeText = it.fee>0 ? '¥'+money(it.fee) : '—';
+    return '<div class="alert-row '+cls+'">'+
+      '<div class="bar" style="background:'+bar+'"></div>'+
+      '<div class="alert-main">'+
+        '<div class="t">'+esc(it.tm.name)+' <span style="font-size:13px;color:#64748b;font-weight:400">· 第 '+esc(it.tm.classNo)+' 类 · '+esc(it.tm.regNo)+'</span></div>'+
+        '<div class="s">'+esc(it.tm.client)+' · 到期日 '+fmtDate(it.expiryDate)+
+        (it.code==='grace'?' · <span style="color:#dc2626;font-weight:700">宽展期，加收迟延费 ¥'+TM_LATE_FEE+'</span>':'')+'</div>'+
+      '</div>'+
+      '<div class="alert-meta"><div class="amt">'+feeText+'</div>'+
+        '<div class="dt"><span class="badge '+it.cls+'">'+it.label+'</span></div></div>'+
+      '<button class="btn sm ok" data-tm-renew="'+it.tm.id+'">标记已续展</button>'+
+    '</div>';
+  }).join('');
+  box.querySelectorAll('[data-tm-renew]').forEach(function(b){
+    b.addEventListener('click',function(){ markTrademarkRenewed(b.dataset.tmRenew); });
+  });
 }
-function normalizeReduction(v){
-  var n = Number(v);
-  if(isNaN(n) || n < 0) return 0;
-  if(n > 0 && n <= 1) return Math.round(n * 100);
-  return Math.round(n);
+
+/* ==================== 商标台账 ==================== */
+function filterTrademarks(){
+  var q=document.getElementById('tmSearch').value.trim().toLowerCase();
+  var fClient=document.getElementById('tmClient').value;
+  var fClass=document.getElementById('tmClass').value;
+  var fStatus=document.getElementById('tmStatus').value;
+  var fFrom=document.getElementById('tmExpiryFrom').value;
+  var fTo=document.getElementById('tmExpiryTo').value;
+  var today=startOfDay(new Date());
+
+  var rows = state.trademarks.filter(function(t){
+    if(tmLedgerScope==='active' && t.archived) return false;
+    if(tmLedgerScope==='archived' && !t.archived) return false;
+    return true;
+  });
+  if(q) rows=rows.filter(function(t){
+    return (t.name||'').toLowerCase().indexOf(q)>=0||
+      (t.regNo||'').toLowerCase().indexOf(q)>=0||
+      (t.client||'').toLowerCase().indexOf(q)>=0;
+  });
+  if(fClient) rows=rows.filter(function(t){return t.client===fClient;});
+  if(fClass) rows=rows.filter(function(t){return t.classNo===fClass;});
+  if(fFrom) rows=rows.filter(function(t){return t.expiryDate && t.expiryDate>=fFrom;});
+  if(fTo) rows=rows.filter(function(t){return t.expiryDate && t.expiryDate<=fTo;});
+
+  var out = rows.map(function(t){
+    var st = tmStatus(t, today);
+    return {t:t, st:st};
+  });
+  if(fStatus) out = out.filter(function(r){return r.st.code===fStatus;});
+
+  // 排序：宽展期 → 可续展 → 其他；同组按剩余天数升序
+  var order = {grace:0, renewable:1, expired:2, early:3, invalid:4};
+  out.sort(function(a,b){
+    if(!!a.t.archived!==!!b.t.archived) return a.t.archived?1:-1;
+    var oa = order[a.st.code] != null ? order[a.st.code] : 99;
+    var ob = order[b.st.code] != null ? order[b.st.code] : 99;
+    if(oa !== ob) return oa - ob;
+    return a.st.daysLeft - b.st.daysLeft;
+  });
+  return out;
 }
-function normalizeStatus(s){
-  if(!s) return '有效';
-  var v=String(s).trim();
-  if(v==='放弃监控'||v==='放弃'||v==='终止') return '放弃监控';
-  return '有效';
+function renderTmLedger(){
+  var rows=filterTrademarks();
+  document.getElementById('tmCntActive').textContent=state.trademarks.filter(function(t){return !t.archived;}).length;
+  document.getElementById('tmCntArchived').textContent=state.trademarks.filter(function(t){return t.archived;}).length;
+  document.getElementById('tmCntAll').textContent=state.trademarks.length;
+
+  var visible=new Set(rows.map(function(r){return r.t.id;}));
+  Array.from(tmSelectedIds).forEach(function(id){ if(!visible.has(id)) tmSelectedIds.delete(id); });
+
+  var tbody=document.getElementById('tmLedgerBody');
+  if(!rows.length){
+    tbody.innerHTML='<tr><td colspan="14"><div class="empty"><span class="icon">📭</span>没有符合条件的记录</div></td></tr>';
+    updateTmBulkBar(); syncTmCheckAll(); return;
+  }
+  tbody.innerHTML=rows.map(function(r,i){
+    var t=r.t, st=r.st, isSel=tmSelectedIds.has(t.id);
+    var rowCls = '';
+    if(t.archived) rowCls = 'archived-row';
+    else if(st.code==='grace') rowCls = 'row-grace';
+    else if(st.code==='renewable') rowCls = 'row-renewable';
+    else if(st.code==='expired') rowCls = 'row-expired';
+
+    var feeText = st.fee>0 ? '¥'+money(st.fee) : '—';
+    var feeStyle = st.code==='grace' ? 'color:#dc2626;font-weight:700' : (st.code==='renewable' ? 'color:#d97706;font-weight:700' : '');
+
+    // 注册年限
+    var regY = parseDate(t.regDate);
+    var yearsText = regY ? (Math.floor((today() - regY.getTime())/(365.25*DAY_MS)) + ' 年') : '—';
+
+    return '<tr class="'+(isSel?'selected':'')+' '+rowCls+'">'+
+      '<td class="td-act"><input type="checkbox" class="tm-row-check" data-id="'+t.id+'" '+(isSel?'checked':'')+'></td>'+
+      '<td class="mono td-act">'+(i+1)+'</td>'+
+      '<td class="td-basic"><div class="truncate" title="'+esc(t.name)+'"><strong>'+esc(t.name)+'</strong></div></td>'+
+      '<td class="mono td-basic">'+esc(t.regNo)+'</td>'+
+      '<td class="td-basic"><span class="badge blue">第 '+esc(t.classNo)+' 类</span></td>'+
+      '<td class="td-basic"><div class="truncate" title="'+esc(t.client)+'">'+esc(t.client)+'</div></td>'+
+      '<td class="mono td-basic">'+esc(t.regDate)+'</td>'+
+      '<td class="mono td-todo first" style="'+(st.code==='grace'?'color:#dc2626;font-weight:800':'')+'">'+esc(t.expiryDate)+'</td>'+
+      '<td class="td-todo"><span class="badge '+st.cls+'">'+st.label+'</span></td>'+
+      '<td class="num td-todo last" style="'+feeStyle+'">'+feeText+'</td>'+
+      '<td class="mono td-hist">'+esc(t.lastRenewedAt||'—')+'</td>'+
+      '<td class="mono td-hist">'+yearsText+'</td>'+
+      '<td class="td-act"><div class="row-actions">'+
+        '<button class="btn sm ghost" data-tm-detail="'+t.id+'">详情</button>'+
+        '<button class="btn sm ghost" data-tm-edit="'+t.id+'">编辑</button>'+
+        '<button class="btn sm ok" data-tm-renew="'+t.id+'" title="标记已续展">已续展</button>'+
+        '<button class="btn sm danger" data-tm-del="'+t.id+'">删除</button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+
+  function today(){ return new Date().getTime(); }
+
+  tbody.querySelectorAll('.tm-row-check').forEach(function(cb){
+    cb.addEventListener('change',function(){
+      if(cb.checked) tmSelectedIds.add(cb.dataset.id); else tmSelectedIds.delete(cb.dataset.id);
+      cb.closest('tr').classList.toggle('selected',cb.checked);
+      updateTmBulkBar(); syncTmCheckAll();
+    });
+  });
+  tbody.querySelectorAll('[data-tm-edit]').forEach(function(b){
+    b.addEventListener('click',function(){openTrademarkModal(b.dataset.tmEdit);});
+  });
+  tbody.querySelectorAll('[data-tm-detail]').forEach(function(b){
+    b.addEventListener('click',function(){openTrademarkDetail(b.dataset.tmDetail);});
+  });
+  tbody.querySelectorAll('[data-tm-del]').forEach(function(b){
+    b.addEventListener('click',function(){deleteTrademark(b.dataset.tmDel);});
+  });
+  tbody.querySelectorAll('[data-tm-renew]').forEach(function(b){
+    b.addEventListener('click',function(){ markTrademarkRenewed(b.dataset.tmRenew); });
+  });
+  updateTmBulkBar(); syncTmCheckAll();
+}
+function updateTmBulkBar(){
+  document.getElementById('tmSelCount').textContent=tmSelectedIds.size;
+  document.getElementById('tmBulkBar').hidden=tmSelectedIds.size===0;
+}
+function syncTmCheckAll(){
+  var boxes=document.querySelectorAll('#tmLedgerBody .tm-row-check');
+  var all=document.getElementById('tmCheckAll');
+  if(!boxes.length){ all.checked=false; all.indeterminate=false; return; }
+  var c=Array.from(boxes).filter(function(b){return b.checked;}).length;
+  all.checked=c===boxes.length; all.indeterminate=c>0&&c<boxes.length;
+}
+function clearTmSelection(){
+  tmSelectedIds.clear();
+  document.getElementById('tmCheckAll').checked=false;
+  document.getElementById('tmCheckAll').indeterminate=false;
+}
+
+/* ==================== 商标续展计划 ==================== */
+function renderTmSchedule(){
+  var today=startOfDay(new Date());
+  var range=document.getElementById('tmScheduleRange').value;
+  var fClient=document.getElementById('tmScheduleClient').value;
+
+  var items = [];
+  tmMonitored().forEach(function(t){
+    var st = tmStatus(t, today);
+    items.push(Object.assign({}, st, {tm:t}));
+  });
+
+  if(fClient) items = items.filter(function(it){return it.tm.client===fClient;});
+
+  if(range==='grace') items = items.filter(function(it){return it.code==='grace';});
+  else if(range==='expired') items = items.filter(function(it){return it.code==='expired';});
+  else if(range!=='all') items = items.filter(function(it){return it.daysLeft>=0 && it.daysLeft<=Number(range);});
+
+  // 排序：宽展期 → 按剩余天数升序
+  var order = {grace:0, renewable:1, expired:2, early:3, invalid:4};
+  items.sort(function(a,b){
+    var oa = order[a.code] != null ? order[a.code] : 99;
+    var ob = order[b.code] != null ? order[b.code] : 99;
+    if(oa !== ob) return oa - ob;
+    return a.daysLeft - b.daysLeft;
+  });
+
+  tmScheduleCache = items;
+
+  var totalFee = 0, totalLate = 0;
+  items.forEach(function(it){
+    if(it.code==='grace'){ totalFee += TM_RENEW_FEE; totalLate += TM_LATE_FEE; }
+    else if(it.code==='renewable'){ totalFee += TM_RENEW_FEE; }
+  });
+
+  document.getElementById('tmScheduleSub').textContent =
+    '共 '+items.length+' 笔 · 续展费 ¥'+money(totalFee)+' · 迟延费 ¥'+money(totalLate)+' · 合计 ¥'+money(totalFee+totalLate);
+
+  var tbody=document.getElementById('tmScheduleBody');
+  if(!items.length){
+    tbody.innerHTML='<tr><td colspan="11"><div class="empty"><span class="icon">📅</span>该范围内暂无待续展商标</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML=items.map(function(it){
+    var isGrace = it.code === 'grace';
+    var rowStyle = isGrace ? 'style="background:#fef2f2"' : (it.code==='renewable' ? 'style="background:#fffbeb"' : '');
+    var fee = it.fee > 0 ? TM_RENEW_FEE : 0;
+    var late = isGrace ? TM_LATE_FEE : 0;
+    var total = fee + late;
+    return '<tr '+rowStyle+'>'+
+      '<td class="mono" style="'+(isGrace?'color:#dc2626;font-weight:800':'')+'">'+fmtDate(it.expiryDate)+'</td>'+
+      '<td><span class="badge '+it.cls+'">'+it.label+'</span>'+
+        (it.daysLeft<0 ? ' <span style="color:#dc2626;font-size:12px">（超期 '+(-it.daysLeft)+' 天）</span>' : (it.daysLeft<=180 ? ' <span style="font-size:12px;color:#d97706">（剩 '+it.daysLeft+' 天）</span>' : ''))+
+      '</td>'+
+      '<td><div class="truncate">'+esc(it.tm.client)+'</div></td>'+
+      '<td><div class="truncate" title="'+esc(it.tm.name)+'">'+esc(it.tm.name)+'</div></td>'+
+      '<td class="mono">'+esc(it.tm.regNo)+'</td>'+
+      '<td><span class="badge blue">第 '+esc(it.tm.classNo)+' 类</span></td>'+
+      '<td><span class="badge '+it.cls+'">'+it.label+'</span></td>'+
+      '<td class="num">'+(fee>0?'¥'+money(fee):'—')+'</td>'+
+      '<td class="num" style="'+(late>0?'color:#dc2626;font-weight:700':'')+'">'+(late>0?'¥'+money(late):'—')+'</td>'+
+      '<td class="num" style="color:#2563eb;font-size:16px;font-weight:800">'+(total>0?'¥'+money(total):'—')+'</td>'+
+      '<td><button class="btn sm ok" data-tm-renew="'+it.tm.id+'">标记已续展</button></td>'+
+    '</tr>';
+  }).join('');
+
+  tbody.querySelectorAll('[data-tm-renew]').forEach(function(b){
+    b.addEventListener('click',function(){ markTrademarkRenewed(b.dataset.tmRenew); });
+  });
+}
+
+/* ==================== 商标年度续展报表 ==================== */
+function renderTmReport(){
+  var yearSel=document.getElementById('tmReportYear');
+  var today=startOfDay(new Date());
+  var years=new Set();
+  for(var y = today.getFullYear(); y <= today.getFullYear() + 5; y++) years.add(y);
+  state.trademarks.forEach(function(t){
+    var e = parseDate(t.expiryDate);
+    if(e) for(var y2 = e.getFullYear(); y2 <= e.getFullYear() + 2; y2++) years.add(y2);
+  });
+  var sorted=Array.from(years).sort();
+  var cur=yearSel.value||String(today.getFullYear());
+  yearSel.innerHTML=sorted.map(function(y){
+    return '<option value="'+y+'"'+(String(y)===cur?' selected':'')+'>'+y+' 年</option>';
+  }).join('');
+  var year=Number(yearSel.value||today.getFullYear());
+  var fClient=document.getElementById('tmReportClient').value;
+
+  var allItems=[];
+  tmMonitored().forEach(function(t){
+    allItems.push(Object.assign({}, tmStatus(t, today), {tm:t}));
+  });
+  if(fClient) allItems = allItems.filter(function(it){return it.tm.client===fClient;});
+
+  var targetYears = [year, year+1, year+2, year+3, year+4];
+  var html = '';
+  var grandTotal = 0, grandCount = 0;
+
+  targetYears.forEach(function(yr, idx){
+    var items = allItems.filter(function(it){
+      var d = parseDate(it.expiryDate);
+      return d && d.getFullYear() === yr;
+    });
+    var renewal = 0, late = 0;
+    items.forEach(function(it){
+      if(it.code==='grace'){ renewal += TM_RENEW_FEE; late += TM_LATE_FEE; }
+      else if(it.code==='renewable'){ renewal += TM_RENEW_FEE; }
+      else if(it.code==='early'){ renewal += TM_RENEW_FEE; }
+    });
+    var total = renewal + late;
+    grandTotal += total;
+    grandCount += items.length;
+    var bg = idx === 0 ? '#2563eb' : (idx === 1 ? '#059669' : (idx === 2 ? '#7c3aed' : '#64748b'));
+    html += '<div style="grid-column:1/-1;padding:12px 20px;background:'+bg+';color:#fff;border-radius:10px;font-weight:700;font-size:16px'+(idx>0?' margin-top:14px':'')+'">'+yr+' 年度</div>';
+    if(!items.length){
+      html += '<div class="q-card" style="grid-column:1/-1;padding:24px;text-align:center;color:#64748b">本年度无需续展</div>';
+    } else {
+      var list = items.sort(function(a,b){return parseDate(a.expiryDate)-parseDate(b.expiryDate);}).map(function(it){
+        return '<div class="q-item">'+
+          '<span class="n" title="'+esc(it.tm.name)+'">'+fmtDate(it.expiryDate).slice(5)+' · 第 '+esc(it.tm.classNo)+' 类 · '+esc(it.tm.client)+' · '+esc(it.tm.name)+'</span>'+
+          '<span class="v">¥'+money(it.fee || TM_RENEW_FEE)+'</span></div>';
+      }).join('');
+      html += '<div class="q-card" style="grid-column:1/-1">'+
+        '<div class="q-head" style="background:#f8fafc"><span class="name">'+yr+' 年度续展明细</span>'+
+        '<span class="amt">共 '+items.length+' 笔 · 续展费 ¥'+money(renewal)+' · 迟延费 ¥'+money(late)+' · 合计 ¥'+money(total)+'</span></div>'+
+        '<div class="q-list">'+list+'</div></div>';
+    }
+  });
+  html += '<div class="q-card" style="grid-column:1/-1;background:#eff6ff;margin-top:14px">'+
+    '<div class="q-head" style="background:#dbeafe"><span class="name">未来 5 年总计</span>'+
+    '<span class="amt" style="font-size:20px">¥'+money(grandTotal)+'</span></div>'+
+    '<div style="padding:14px 20px;color:#1e40af;font-size:14.5px">共 '+grandCount+' 笔续展 · 涉及 '+new Set(allItems.map(function(it){return it.tm.client;})).size+' 家客户</div></div>';
+  document.getElementById('tmReportGrid').innerHTML = html;
+}
+
+/* ==================== 商标客户维度报表 ==================== */
+function renderTmClientReport(){
+  var yearSel=document.getElementById('tmClientReportYear');
+  var today=startOfDay(new Date());
+  var years=new Set();
+  for(var y = today.getFullYear(); y <= today.getFullYear() + 5; y++) years.add(y);
+  var sorted=Array.from(years).sort();
+  var cur=yearSel.value||String(today.getFullYear());
+  yearSel.innerHTML=sorted.map(function(y){
+    return '<option value="'+y+'"'+(String(y)===cur?' selected':'')+'>'+y+' 年</option>';
+  }).join('');
+  var year=Number(yearSel.value||today.getFullYear());
+
+  // 汇总
+  var byClient = {};
+  var allItems = [];
+  tmMonitored().forEach(function(t){
+    allItems.push(Object.assign({}, tmStatus(t, today), {tm:t}));
+  });
+
+  // 按客户分组（含所有年份，用于计算"该客户在该年"的续展情况）
+  var targetYears = [year, year+1, year+2];
+  targetYears.forEach(function(yr){
+    allItems.forEach(function(it){
+      var d = parseDate(it.expiryDate);
+      if(!d || d.getFullYear() !== yr) return;
+      var c = it.tm.client || '（无客户）';
+      if(!byClient[c]) byClient[c] = {client:c, total:0, count:0, byYear:{}, items:[]};
+      var fee = it.fee || TM_RENEW_FEE;
+      byClient[c].total += fee;
+      byClient[c].count += 1;
+      if(!byClient[c].byYear[yr]) byClient[c].byYear[yr] = {count:0, fee:0};
+      byClient[c].byYear[yr].count += 1;
+      byClient[c].byYear[yr].fee += fee;
+      byClient[c].items.push(Object.assign({}, it, {fee: fee}));
+    });
+  });
+
+  var clients = Object.values(byClient).sort(function(a,b){return b.total - a.total;});
+
+  if(!clients.length){
+    document.getElementById('tmClientReportGrid').innerHTML = '<div class="empty" style="grid-column:1/-1"><span class="icon">📊</span>'+year+' – '+(year+2)+' 年度暂无待续展商标</div>';
+    return;
+  }
+
+  var grandTotal = clients.reduce(function(s,c){return s+c.total;},0);
+  var grandCount = clients.reduce(function(s,c){return s+c.count;},0);
+
+  var html = clients.map(function(c){
+    var list = c.items.sort(function(a,b){return parseDate(a.expiryDate)-parseDate(b.expiryDate);}).map(function(it){
+      return '<div class="q-item">'+
+        '<span class="n">'+fmtDate(it.expiryDate).slice(5)+' · 第 '+esc(it.tm.classNo)+' 类 · '+esc(it.tm.name)+'</span>'+
+        '<span class="v">¥'+money(it.fee)+'</span></div>';
+    }).join('');
+    var yearBreakdown = targetYears.map(function(yr){
+      var y = c.byYear[yr];
+      return yr+': '+((y?y.count:'0'))+' 笔 ¥'+money(y?y.fee:0);
+    }).join(' · ');
+    return '<div class="q-card">'+
+      '<div class="q-head"><span class="name">'+esc(c.client)+'</span>'+
+      '<span class="amt">¥'+money(c.total)+'</span></div>'+
+      '<div style="padding:10px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:13px;color:#64748b">共 '+c.count+' 笔 · '+yearBreakdown+'</div>'+
+      '<div class="q-list">'+list+'</div></div>';
+  }).join('');
+
+  html += '<div class="q-card" style="grid-column:1/-1;background:#eff6ff;margin-top:14px">'+
+    '<div class="q-head" style="background:#dbeafe"><span class="name">'+year+' – '+(year+2)+' 年度汇总</span>'+
+    '<span class="amt" style="font-size:20px">¥'+money(grandTotal)+'</span></div>'+
+    '<div style="padding:14px 20px;color:#1e40af;font-size:14.5px">共 '+grandCount+' 笔续展 · 涉及 '+clients.length+' 家客户</div></div>';
+
+  document.getElementById('tmClientReportGrid').innerHTML = html;
+}
+
+/* ==================== 商标表单 ==================== */
+function openTrademarkModal(id){
+  tmEditingId=id||null;
+  var t=id?state.trademarks.find(function(x){return x.id===id;}):null;
+  document.getElementById('tmModalTitle').textContent=t?'编辑商标':'新增商标';
+  document.getElementById('tm_name').value=t?t.name:'';
+  document.getElementById('tm_regNo').value=t?t.regNo:'';
+  document.getElementById('tm_classNo').value=t?t.classNo:'';
+  document.getElementById('tm_regDate').value=t?t.regDate:'';
+  document.getElementById('tm_lastRenewed').value=t?(t.lastRenewedAt||''):'';
+  document.getElementById('tm_client').value=t?t.client:'';
+  document.getElementById('tm_contact').value=t?(t.contact||''):'';
+  document.getElementById('tm_phone').value=t?(t.phone||''):'';
+  document.getElementById('tm_notes').value=t?(t.notes||''):'';
+  document.getElementById('tmModal').classList.add('show');
+  setTimeout(function(){document.getElementById('tm_name').focus();},60);
+}
+async function saveTrademark(){
+  var name=document.getElementById('tm_name').value.trim();
+  var regNo=document.getElementById('tm_regNo').value.trim();
+  var classNo=String(document.getElementById('tm_classNo').value).trim();
+  var regDate=document.getElementById('tm_regDate').value;
+  var lastRenewed=document.getElementById('tm_lastRenewed').value||'';
+  var client=document.getElementById('tm_client').value.trim();
+
+  if(!name) return alert('请填写商标名称');
+  if(!regNo) return alert('请填写注册号');
+  if(!classNo) return alert('请填写类别号');
+  var cNum = Number(classNo);
+  if(isNaN(cNum) || cNum < 1 || cNum > 45) return alert('类别号必须是 1–45 之间的整数');
+  if(!regDate) return alert('请填写核准注册日');
+  if(!client) return alert('请填写客户');
+
+  // 计算到期日
+  var rd = parseDate(regDate);
+  if(!rd) return alert('核准注册日无法解析');
+  var expDate = addYears(rd, 10);
+
+  var data = {
+    id: tmEditingId || ('T' + Date.now() + Math.random().toString(36).slice(2,7)),
+    name: name, regNo: regNo, classNo: classNo, client: client,
+    regDate: fmtDate(rd),
+    expiryDate: fmtDate(expDate),
+    lastRenewedAt: lastRenewed,
+    archived: false, archivedAt: '',
+    notes: document.getElementById('tm_notes').value.trim(),
+    contact: document.getElementById('tm_contact').value.trim(),
+    phone: document.getElementById('tm_phone').value.trim()
+  };
+
+  if(tmEditingId){
+    // 编辑时保留原归档状态
+    var old = state.trademarks.find(function(x){return x.id===tmEditingId;});
+    if(old){ data.archived = old.archived; data.archivedAt = old.archivedAt; }
+  }
+
+  var ok = await upsertTrademark(data);
+  if(!ok) return;
+  document.getElementById('tmModal').classList.remove('show');
+  await loadTrademarks(); renderAll();
+}
+async function deleteTrademark(id){
+  var t = state.trademarks.find(function(x){return x.id===id;}); if(!t) return;
+  if(!confirm('⚠️ 确定永久删除「'+t.name+'（'+t.regNo+'）」？\n\n建议改用「归档」以保留记录。')) return;
+  if(!await deleteTrademarkById(id)) return;
+  state.trademarks = state.trademarks.filter(function(x){return x.id!==id;});
+  document.getElementById('tmModalDetail').classList.remove('show');
+  renderAll();
+}
+
+/* ==================== 商标详情 ==================== */
+function openTrademarkDetail(id){
+  var t=state.trademarks.find(function(x){return x.id===id;}); if(!t) return;
+  var today=startOfDay(new Date());
+  var st = tmStatus(t, today);
+  document.getElementById('tmDetailTitle').textContent = t.name + ' · 第 ' + t.classNo + ' 类';
+
+  var info = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:22px">'+
+    [['注册号', t.regNo], ['类别', '第 ' + t.classNo + ' 类'],
+     ['客户', t.client], ['核准注册日', t.regDate],
+     ['专用权到期日', t.expiryDate],
+     ['上次续展日', t.lastRenewedAt || '（从未续展）'],
+     ['当前状态', st.label],
+     ['应缴费用', st.fee > 0 ? '¥' + money(st.fee) + (st.code==='grace' ? '（含迟延费 ¥' + TM_LATE_FEE + '）' : '') : '—'],
+     ['联系人', (t.contact||'—') + (t.phone ? ' / ' + t.phone : '')],
+     ['监控', t.archived ? '已归档' : '监控中']
+    ].map(function(kv){
+      return '<div><div style="font-size:13px;color:#64748b;font-weight:600">'+kv[0]+'</div>'+
+        '<div style="font-weight:600;margin-top:3px;font-size:15px">'+esc(kv[1])+'</div></div>';
+    }).join('')+'</div>'+
+    (t.notes?'<div style="background:#f8fafc;padding:14px 16px;border-radius:8px;font-size:14px;margin-bottom:22px"><b>备注：</b>'+esc(t.notes)+'</div>':'')+
+    '<h4 style="font-size:16px;margin-bottom:12px">续展时间轴</h4>';
+
+  var regD = parseDate(t.regDate);
+  var expiryD = parseDate(t.expiryDate);
+  var renewStart = expiryD ? addMonths(expiryD, -12) : null;
+  var graceEnd = expiryD ? addMonths(expiryD, 6) : null;
+
+  var tlCls = function(dateStr, cmp){
+    var d = parseDate(dateStr);
+    if(!d) return '';
+    if(d <= today && cmp !== 'future') return 'done';
+    if(st.code === 'grace' && dateStr === fmtDate(graceEnd)) return 'danger';
+    if(st.code === 'renewable' && dateStr === fmtDate(expiryD)) return 'active';
+    return '';
+  };
+
+  var timeline = '<div class="tl">'+
+    '<div class="tl-item done">'+
+      '<div class="row"><div><div class="y">✅ 核准注册</div>'+
+      '<div class="d">'+t.regDate+'</div></div></div></div>'+
+    (renewStart ? '<div class="tl-item '+tlCls(fmtDate(renewStart),'past')+'">'+
+      '<div class="row"><div><div class="y">📅 续展期开始</div>'+
+      '<div class="d">'+fmtDate(renewStart)+'（最早可提交续展日期）</div></div></div></div>' : '')+
+    (expiryD ? '<div class="tl-item '+tlCls(fmtDate(expiryD))+'">'+
+      '<div class="row"><div><div class="y">⏰ 专用权到期日</div>'+
+      '<div class="d">'+fmtDate(expiryD)+'</div></div></div></div>' : '')+
+    (graceEnd ? '<div class="tl-item '+tlCls(fmtDate(graceEnd))+'">'+
+      '<div class="row"><div><div class="y">⚠️ 宽展期结束（最后救命期限）</div>'+
+      '<div class="d">'+fmtDate(graceEnd)+'</div></div></div></div>' : '')+
+    '</div>';
+
+  document.getElementById('tmDetailBody').innerHTML = info + timeline +
+    '<div style="margin-top:26px;display:flex;gap:12px;flex-wrap:wrap">'+
+      '<button class="btn ghost" id="tmBtnEditFromDetail">编辑</button>'+
+      '<button class="btn ok" id="tmBtnRenewFromDetail">✓ 标记已续展</button>'+
+      (t.archived?'<button class="btn amber" id="tmBtnRestoreFromDetail">↩ 恢复监控</button>':
+        '<button class="btn amber" id="tmBtnArchiveFromDetail">📦 归档</button>')+
+      '<button class="btn danger" id="tmBtnDeleteFromDetail">删除</button></div>';
+
+  document.getElementById('tmBtnEditFromDetail').addEventListener('click',function(){
+    document.getElementById('tmModalDetail').classList.remove('show');
+    openTrademarkModal(t.id);
+  });
+  document.getElementById('tmBtnRenewFromDetail').addEventListener('click',function(){
+    markTrademarkRenewed(t.id).then(function(){ if(state.trademarks.find(function(x){return x.id===t.id;})) openTrademarkDetail(t.id); });
+  });
+  var ba = document.getElementById('tmBtnArchiveFromDetail');
+  if(ba) ba.addEventListener('click',async function(){
+    await updateTrademarkField(t.id,{archived:true, archived_at:fmtDate(new Date())});
+    t.archived=true; t.archivedAt=fmtDate(new Date());
+    renderAll(); openTrademarkDetail(t.id);
+  });
+  var br = document.getElementById('tmBtnRestoreFromDetail');
+  if(br) br.addEventListener('click',async function(){
+    await updateTrademarkField(t.id,{archived:false, archived_at:''});
+    t.archived=false; t.archivedAt='';
+    renderAll(); openTrademarkDetail(t.id);
+  });
+  document.getElementById('tmBtnDeleteFromDetail').addEventListener('click',function(){deleteTrademark(t.id);});
+
+  document.getElementById('tmModalDetail').classList.add('show');
+}
+
+/* ==================== 商标批量操作 ==================== */
+async function tmBulkArchive(){
+  var ids=Array.from(tmSelectedIds); if(!ids.length) return;
+  if(!confirm('确定将选中的 '+ids.length+' 件商标移入归档？')) return;
+  var res = await sb.from('trademarks').update({archived:true, archived_at:fmtDate(new Date())}).in('id',ids);
+  if(res.error){ alert('归档失败：'+res.error.message); return; }
+  tmSelectedIds.clear(); await loadTrademarks(); renderAll();
+}
+async function tmBulkRestore(){
+  var ids=Array.from(tmSelectedIds); if(!ids.length) return;
+  if(!confirm('确定恢复选中的 '+ids.length+' 件商标？')) return;
+  var res = await sb.from('trademarks').update({archived:false, archived_at:''}).in('id',ids);
+  if(res.error){ alert('恢复失败：'+res.error.message); return; }
+  tmSelectedIds.clear(); await loadTrademarks(); renderAll();
+}
+async function tmBulkRenew(){
+  var ids=Array.from(tmSelectedIds); if(!ids.length) return;
+  if(!confirm('确定将选中的 '+ids.length+' 件商标统一标记为已续展？\n\n每件商标的到期日都将顺延 10 年。')) return;
+  var today=fmtDate(new Date());
+  var okCount = 0;
+  for(var i=0; i<ids.length; i++){
+    var t = state.trademarks.find(function(x){return x.id===ids[i];});
+    if(!t) continue;
+    var oldExp = parseDate(t.expiryDate);
+    if(!oldExp) continue;
+    var newExp = addYears(oldExp, 10);
+    var res = await sb.from('trademarks').update({expiry_date: fmtDate(newExp), last_renewed_at: today}).eq('id', ids[i]);
+    if(!res.error) okCount++;
+  }
+  alert('完成：成功 '+okCount+' 件 / 共 '+ids.length+' 件');
+  tmSelectedIds.clear(); await loadTrademarks(); renderAll();
+}
+async function tmBulkDelete(){
+  var ids=Array.from(tmSelectedIds); if(!ids.length) return;
+  if(!confirm('⚠️ 确定永久删除选中的 '+ids.length+' 件商标？\n\n建议改用「归档」以保留记录。')) return;
+  var res = await sb.from('trademarks').delete().in('id',ids);
+  if(res.error){ alert('删除失败：'+res.error.message); return; }
+  tmSelectedIds.clear(); await loadTrademarks(); renderAll();
+}
+function tmBulkExport(){
+  var rows = state.trademarks.filter(function(t){return tmSelectedIds.has(t.id);});
+  if(!rows.length) return;
+  var header = ['商标名称','注册号','类别','客户','核准注册日','到期日','上次续展日','备注'];
+  var data = [header].concat(rows.map(function(t){
+    return [t.name, t.regNo, t.classNo, t.client, t.regDate, t.expiryDate, t.lastRenewedAt||'', t.notes||''];
+  }));
+  exportXLSX('选中商标_'+fmtDate(new Date())+'.xlsx', data, '选中商标');
+}
+
+/* ==================== 导入导出工具 ==================== */
+function exportXLSX(filename, data, sheetName){
+  if(!xlsxOK){ alert('Excel 库加载失败，请刷新页面重试'); return; }
+  var ws = XLSX.utils.aoa_to_sheet(data);
+  var range = XLSX.utils.decode_range(ws['!ref']);
+  // 注册号 / 申请号列 强制文本
+  var textCols = [];
+  if(sheetName === '专利数据' || sheetName === '选中专利') textCols = [2];
+  else if(sheetName === '商标数据' || sheetName === '选中商标') textCols = [1];
+  textCols.forEach(function(c){
+    for(var R = range.s.r + 1; R <= range.e.r; R++){
+      var cellAddr = XLSX.utils.encode_cell({r:R, c:c});
+      if(ws[cellAddr]){ ws[cellAddr].t = 's'; ws[cellAddr].z = '@'; }
+    }
+  });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName || 'Sheet1');
+  XLSX.writeFile(wb, filename);
 }
 function parseCSV(text){
   if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
@@ -1378,24 +2318,45 @@ function parseCSV(text){
   if(field !== '' || cur.length){ cur.push(field); rows.push(cur); }
   return rows;
 }
-var COL_HEADERS = ['专利名称','申请日','申请号','专利类型','客户','授权日','费减比例','已缴年度','备注'];
-var COL_WIDTHS = [{wch:40},{wch:14},{wch:20},{wch:12},{wch:36},{wch:14},{wch:12},{wch:12},{wch:36}];
 
+/* ==================== 专利导入导出 ==================== */
+var COL_HEADERS = ['专利名称','申请日','申请号','专利类型','客户','授权日','费减比例','已缴年度','备注'];
+var HEADER_MAP = {
+  '专利名称':'name','名称':'name',
+  '申请号':'appNo','申请编号':'appNo',
+  '专利类型':'type','类型':'type',
+  '申请日':'appDate','申请日期':'appDate',
+  '授权日':'grantDate','授权日期':'grantDate',
+  '客户':'client','申请人':'client','申请人/客户':'client','申请人 / 客户':'client',
+  '费减比例':'reduction','减免':'reduction','费减':'reduction',
+  '状态':'status','法律状态':'status',
+  '已缴年度':'paidYear','已缴':'paidYear','已缴纳年度':'paidYear','缴费年度':'paidYear',
+  '备注':'notes','说明':'notes'
+};
+function normalizeReduction(v){
+  var n = Number(v);
+  if(isNaN(n) || n < 0) return 0;
+  if(n > 0 && n <= 1) return Math.round(n * 100);
+  return Math.round(n);
+}
+function normalizeStatus(s){
+  if(!s) return '有效';
+  var v=String(s).trim();
+  if(v==='放弃监控'||v==='放弃'||v==='终止') return '放弃监控';
+  return '有效';
+}
+function normAppNo(s){
+  return String(s == null ? '' : s).replace(/\s+/g,'').toUpperCase();
+}
 function downloadTemplate(){
-  if(!xlsxOK){ alert('Excel 库加载失败，请刷新页面重试'); return; }
+  if(!xlsxOK){ alert('Excel 库加载失败'); return; }
   var example = [
     '【示例】一种图像处理方法（导入前请删除本行）',
-    '2016-09-27',
-    '2016108575241',
-    '发明',
+    '2016-09-27','2016108575241','发明',
     '北方夜视科技（南京）研究院有限公司',
-    '2019-01-08',
-    85,
-    11,
-    ''
+    '2019-01-08', 85, 11, ''
   ];
   var ws = XLSX.utils.aoa_to_sheet([COL_HEADERS, example]);
-  ws['!cols'] = COL_WIDTHS;
   var range = XLSX.utils.decode_range(ws['!ref']);
   for(var R = range.s.r; R <= range.e.r; R++){
     var cellAddr = XLSX.utils.encode_cell({r:R, c:2});
@@ -1405,11 +2366,8 @@ function downloadTemplate(){
   XLSX.utils.book_append_sheet(wb, ws, '专利导入模板');
   XLSX.writeFile(wb, '专利导入模板.xlsx');
 }
-function normAppNo(s){
-  return String(s == null ? '' : s).replace(/\s+/g,'').toUpperCase();
-}
 async function processImportRows(rows){
-  if(rows.length < 2){ alert('文件内容为空或格式不对（至少需要表头+一行数据）'); return; }
+  if(rows.length < 2){ alert('文件内容为空或格式不对'); return; }
   var header = rows[0].map(function(h){ return String(h == null ? '' : h).trim(); });
   var items = [];
   for(var i = 1; i < rows.length; i++){
@@ -1430,9 +2388,7 @@ async function processImportRows(rows){
 
   var newCount = 0, updateCount = 0, unchangedCount = 0, fail = 0;
   var firstErr = '';
-  var invalidDates = [];
-  var invalidGrantDates = [];
-  var reductionWithoutGrant = [];
+  var invalidDates = [], invalidGrantDates = [], reductionWithoutGrant = [];
   var updateDetails = [];
 
   for(var k = 0; k < items.length; k++){
@@ -1452,20 +2408,14 @@ async function processImportRows(rows){
     var grantRaw = it.grantDate != null ? it.grantDate : (it.grant_date != null ? it.grant_date : '');
     var grantStr = '';
     if(grantRaw !== '' && grantRaw != null){
-      var grantParsed = parseDate(grantRaw);
-      if(grantParsed){
-        grantStr = fmtDate(grantParsed);
-      } else {
-        if(invalidGrantDates.length < 5) invalidGrantDates.push(nm + ' (授权日: "' + grantRaw + '")');
-        grantStr = '';
-      }
+      var gp = parseDate(grantRaw);
+      if(gp) grantStr = fmtDate(gp);
+      else { if(invalidGrantDates.length < 5) invalidGrantDates.push(nm + ' (授权日: "' + grantRaw + '")'); }
     }
     var paidRaw = it.paidYear != null ? it.paidYear : (it.paid_year != null ? it.paid_year : '');
     var paidY = Number(paidRaw) || 0;
     var reduction = normalizeReduction(it.reduction);
-    if(reduction > 0 && !grantStr){
-      reductionWithoutGrant.push(nm);
-    }
+    if(reduction > 0 && !grantStr) reductionWithoutGrant.push(nm);
     var st = normalizeStatus(it.status);
     var newType = it.type || '发明';
     var newNotes = String(it.notes || '');
@@ -1474,15 +2424,11 @@ async function processImportRows(rows){
     var normNo = normAppNo(no);
     var existing = null;
     for(var ei = 0; ei < state.patents.length; ei++){
-      if(normAppNo(state.patents[ei].appNo) === normNo){
-        existing = state.patents[ei];
-        break;
-      }
+      if(normAppNo(state.patents[ei].appNo) === normNo){ existing = state.patents[ei]; break; }
     }
 
     var id, changes = [];
-    var finalPaidY = paidY;
-    var finalArchivedAt = '';
+    var finalPaidY = paidY, finalArchivedAt = '';
 
     if(existing){
       id = existing.id;
@@ -1494,130 +2440,68 @@ async function processImportRows(rows){
       if((Number(existing.reduction)||0) !== reduction) changes.push({field:'费减比例', old:(Number(existing.reduction)||0)+'%', new_:reduction+'%'});
       if((existing.status||'有效') !== st) changes.push({field:'状态', old:existing.status||'有效', new_:st});
       if((existing.notes||'') !== newNotes) changes.push({field:'备注', old:(existing.notes||'（空）').slice(0,30), new_:(newNotes||'（空）').slice(0,30)});
-
       var oldPaid = Number(existing.paidYear) || 0;
       finalPaidY = Math.max(oldPaid, paidY);
-      if(oldPaid !== finalPaidY){
-        changes.push({field:'已缴年度', old:String(oldPaid), new_:String(finalPaidY) + '（取较大值）'});
-      }
-
+      if(oldPaid !== finalPaidY) changes.push({field:'已缴年度', old:String(oldPaid), new_:String(finalPaidY) + '（取较大值）'});
       var archived = (st === '放弃监控');
-      if(archived && existing.archived && existing.archivedAt){
-        finalArchivedAt = existing.archivedAt;
-      } else if(archived){
-        finalArchivedAt = fmtDate(new Date());
-      } else {
-        finalArchivedAt = '';
-      }
+      if(archived && existing.archived && existing.archivedAt) finalArchivedAt = existing.archivedAt;
+      else if(archived) finalArchivedAt = fmtDate(new Date());
+      else finalArchivedAt = '';
 
-      var row2 = {
-        id: id, user_id: state.user.id,
-        name: nm, app_no: no, app_date: newAppDate,
-        grant_date: grantStr, type: newType, client: cl,
-        reduction: reduction, status: st,
-        archived: archived, archived_at: finalArchivedAt,
-        paid_year: finalPaidY, notes: newNotes, paid_years: []
-      };
+      var row2 = {id:id, user_id:state.user.id, name:nm, app_no:no, app_date:newAppDate,
+        grant_date:grantStr, type:newType, client:cl, reduction:reduction, status:st,
+        archived:archived, archived_at:finalArchivedAt, paid_year:finalPaidY, notes:newNotes, paid_years:[]};
       var res = await sb.from('patents').upsert(row2, {onConflict:'id'});
       if(res.error){ fail++; if(!firstErr) firstErr = res.error.message; continue; }
+      existing.name = nm; existing.appNo = no; existing.appDate = newAppDate;
+      existing.grantDate = grantStr; existing.type = newType; existing.client = cl;
+      existing.reduction = reduction; existing.status = st; existing.archived = archived;
+      existing.archivedAt = finalArchivedAt; existing.paidYear = finalPaidY; existing.notes = newNotes;
 
-      existing.name = nm;
-      existing.appNo = no;
-      existing.appDate = newAppDate;
-      existing.grantDate = grantStr;
-      existing.type = newType;
-      existing.client = cl;
-      existing.reduction = reduction;
-      existing.status = st;
-      existing.archived = archived;
-      existing.archivedAt = finalArchivedAt;
-      existing.paidYear = finalPaidY;
-      existing.notes = newNotes;
-
-      if(changes.length > 0){
-        updateCount++;
-        updateDetails.push({name: nm, appNo: no, changes: changes});
-      } else {
-        unchangedCount++;
-      }
+      if(changes.length > 0){ updateCount++; updateDetails.push({name:nm, appNo:no, changes:changes}); }
+      else unchangedCount++;
     } else {
       id = it.id || ('P' + Date.now() + Math.random().toString(36).slice(2,7) + k);
       var archived2 = (st === '放弃监控');
-      var row3 = {
-        id: id, user_id: state.user.id,
-        name: nm, app_no: no, app_date: newAppDate,
-        grant_date: grantStr, type: newType, client: cl,
-        reduction: reduction, status: st,
-        archived: archived2, archived_at: archived2 ? fmtDate(new Date()) : '',
-        paid_year: paidY, notes: newNotes, paid_years: []
-      };
+      var row3 = {id:id, user_id:state.user.id, name:nm, app_no:no, app_date:newAppDate,
+        grant_date:grantStr, type:newType, client:cl, reduction:reduction, status:st,
+        archived:archived2, archived_at:archived2 ? fmtDate(new Date()) : '', paid_year:paidY, notes:newNotes, paid_years:[]};
       var res2 = await sb.from('patents').upsert(row3, {onConflict:'id'});
       if(res2.error){ fail++; if(!firstErr) firstErr = res2.error.message; continue; }
       newCount++;
-      state.patents.push({
-        id: id, name: nm, appNo: no, appDate: newAppDate,
-        grantDate: grantStr, type: newType, client: cl,
-        reduction: reduction, status: st,
-        archived: archived2, archivedAt: archived2 ? fmtDate(new Date()) : '',
-        paidYear: paidY, notes: newNotes, paidYears: []
-      });
+      state.patents.push({id:id, name:nm, appNo:no, appDate:newAppDate, grantDate:grantStr,
+        type:newType, client:cl, reduction:reduction, status:st, archived:archived2,
+        archivedAt:archived2 ? fmtDate(new Date()) : '', paidYear:paidY, notes:newNotes, paidYears:[]});
     }
   }
-
-  await loadPatents();
-  renderAll();
-
-  var lines = [];
-  lines.push('导入完成');
-  lines.push('───────────────');
-  lines.push('· 新增：' + newCount + ' 条');
-  lines.push('· 覆盖更新：' + updateCount + ' 条');
+  await loadPatents(); renderAll();
+  var lines = ['导入完成','───────────────',
+    '· 新增：' + newCount + ' 条','· 覆盖更新：' + updateCount + ' 条'];
   if(unchangedCount > 0) lines.push('· 无变化（跳过）：' + unchangedCount + ' 条');
   if(fail > 0) lines.push('· 失败：' + fail + ' 条');
-  if(invalidDates.length){
-    lines.push('');
-    lines.push('⚠ 申请日无法识别的记录（前 ' + invalidDates.length + ' 条）：');
-    invalidDates.forEach(function(s){ lines.push('  · ' + s); });
-  }
-  if(invalidGrantDates.length){
-    lines.push('');
-    lines.push('⚠ 授权日无法识别的记录（前 ' + invalidGrantDates.length + ' 条，已按空值处理）：');
-    invalidGrantDates.forEach(function(s){ lines.push('  · ' + s); });
-  }
-  if(reductionWithoutGrant.length){
-    lines.push('');
-    lines.push('⚠ 下列记录填写了费减比例但没有授权日，已按「不享受减免」处理：');
-    reductionWithoutGrant.slice(0, 10).forEach(function(s){ lines.push('  · ' + s); });
-    if(reductionWithoutGrant.length > 10) lines.push('  · ...（共 '+reductionWithoutGrant.length+' 条）');
-  }
-  if(firstErr){
-    lines.push('');
-    lines.push('首个错误：' + firstErr);
-  }
+  if(invalidDates.length){ lines.push(''); lines.push('⚠ 申请日无法识别：'); invalidDates.forEach(function(s){lines.push('  · '+s);}); }
+  if(invalidGrantDates.length){ lines.push(''); lines.push('⚠ 授权日无法识别（按空值处理）：'); invalidGrantDates.forEach(function(s){lines.push('  · '+s);}); }
+  if(reductionWithoutGrant.length){ lines.push(''); lines.push('⚠ 填了费减但无授权日，按不享受减免处理：');
+    reductionWithoutGrant.slice(0,10).forEach(function(s){lines.push('  · '+s);});
+    if(reductionWithoutGrant.length>10) lines.push('  · ...（共 '+reductionWithoutGrant.length+' 条）'); }
+  if(firstErr){ lines.push(''); lines.push('首个错误：' + firstErr); }
   if(updateDetails.length > 0){
-    lines.push('');
-    lines.push('━━━ 覆盖详情 ━━━');
+    lines.push(''); lines.push('━━━ 覆盖详情 ━━━');
     var showMax = Math.min(updateDetails.length, 20);
-    for(var ui = 0; ui < showMax; ui++){
+    for(var ui=0; ui<showMax; ui++){
       var u = updateDetails[ui];
       lines.push((ui+1) + '. ' + u.name + ' (' + u.appNo + ')');
-      u.changes.forEach(function(ch){
-        lines.push('   · ' + ch.field + '：' + ch.old + '  →  ' + ch.new_);
-      });
+      u.changes.forEach(function(ch){ lines.push('   · ' + ch.field + '：' + ch.old + '  →  ' + ch.new_); });
     }
-    if(updateDetails.length > showMax){
-      lines.push('');
-      lines.push('（还有 ' + (updateDetails.length - showMax) + ' 条覆盖未显示，详情请查看台账或刷新页面核对）');
-    }
+    if(updateDetails.length > showMax) lines.push('（还有 ' + (updateDetails.length - showMax) + ' 条覆盖未显示）');
   }
   alert(lines.join('\n'));
 }
 function importFile(file){
   var fname = file.name.toLowerCase();
   var reader = new FileReader();
-
   if(fname.endsWith('.xlsx') || fname.endsWith('.xls')){
-    if(!xlsxOK){ alert('Excel 库加载失败，请刷新页面重试'); return; }
+    if(!xlsxOK){ alert('Excel 库加载失败'); return; }
     reader.onload = async function(e){
       try {
         var data = new Uint8Array(e.target.result);
@@ -1625,9 +2509,7 @@ function importFile(file){
         var sheet = wb.Sheets[wb.SheetNames[0]];
         var rows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:false, defval:''});
         await processImportRows(rows);
-      } catch(err){
-        alert('Excel 解析失败：' + (err.message || err));
-      }
+      } catch(err){ alert('Excel 解析失败：' + (err.message || err)); }
     };
     reader.readAsArrayBuffer(file);
   } else if(fname.endsWith('.json')){
@@ -1637,108 +2519,278 @@ function importFile(file){
         var list = Array.isArray(data) ? data : (data.patents || []);
         var header = COL_HEADERS;
         var rows = [header].concat(list.map(function(it){
-          return [
-            it.name||'', it.appDate||it.app_date||'',
-            it.appNo||it.app_no||'', it.type||'发明',
-            it.client||'', it.grantDate||it.grant_date||'',
-            it.reduction||0, it.paidYear||it.paid_year||0,
-            it.notes||''
-          ];
+          return [it.name||'', it.appDate||it.app_date||'', it.appNo||it.app_no||'',
+            it.type||'发明', it.client||'', it.grantDate||it.grant_date||'',
+            it.reduction||0, it.paidYear||it.paid_year||0, it.notes||''];
         }));
         await processImportRows(rows);
-      } catch(err){
-        alert('JSON 解析失败：' + (err.message || err));
-      }
+      } catch(err){ alert('JSON 解析失败：' + (err.message || err)); }
     };
     reader.readAsText(file, 'UTF-8');
   } else {
     reader.onload = async function(e){
-      try {
-        var rows = parseCSV(e.target.result);
-        await processImportRows(rows);
-      } catch(err){
-        alert('CSV 解析失败：' + (err.message || err));
-      }
+      try { await processImportRows(parseCSV(e.target.result)); }
+      catch(err){ alert('CSV 解析失败：' + (err.message || err)); }
     };
     reader.readAsText(file, 'UTF-8');
   }
 }
-function exportXLSX(filename, data, sheetName){
-  if(!xlsxOK){ alert('Excel 库加载失败，请刷新页面重试'); return; }
-  var ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = COL_WIDTHS;
-  var range = XLSX.utils.decode_range(ws['!ref']);
-  for(var R = range.s.r + 1; R <= range.e.r; R++){
-    var cellAddr = XLSX.utils.encode_cell({r:R, c:2});
-    if(ws[cellAddr]){ ws[cellAddr].t = 's'; ws[cellAddr].z = '@'; }
-  }
-  var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, sheetName || 'Sheet1');
-  XLSX.writeFile(wb, filename);
-}
 function exportPatentsXLSX(){
   var data=[COL_HEADERS].concat(state.patents.map(function(p){
-    return [
-      p.name, p.appDate, p.appNo, p.type,
-      p.client, p.grantDate || '', p.reduction || 0,
-      paidYear(p), p.notes || ''
-    ];
+    return [p.name, p.appDate, p.appNo, p.type, p.client, p.grantDate||'',
+      p.reduction||0, paidYear(p), p.notes||''];
   }));
   exportXLSX('专利数据_' + fmtDate(new Date()) + '.xlsx', data, '专利数据');
 }
-function exportScheduleXLSX(){
-  var header=['缴费截止日','剩余天数','客户','专利名称','申请号','类型','年度','官费标准','减免比例','应缴年费','滞纳金','合计'];
-  var rows=scheduleCache.map(function(it){
-    return [it.dueDate,it.daysLeft,it.patent.client,it.patent.name,
-      it.patent.appNo,it.patent.type,'第'+it.year+'年',it.baseFee,
-      it.reduction>0?it.reduction+'%':'0',it.fee,it.lateFee,it.total];
+
+/* ==================== 商标导入导出 ==================== */
+var TM_COL_HEADERS = ['商标名称','注册号','类别','客户','核准注册日','上次续展日','备注'];
+var TM_HEADER_MAP = {
+  '商标名称':'name','名称':'name',
+  '注册号':'regNo','商标注册号':'regNo','申请号':'regNo','申请编号':'regNo',
+  '类别':'classNo','类别号':'classNo','国际分类':'classNo','类':'classNo',
+  '客户':'client','申请人':'client','权利人':'client','商标权人':'client',
+  '核准注册日':'regDate','注册日':'regDate','注册日期':'regDate','核准注册日期':'regDate',
+  '上次续展日':'lastRenewedAt','续展日':'lastRenewedAt','续展日期':'lastRenewedAt',
+  '备注':'notes','说明':'notes'
+};
+function downloadTrademarkTemplate(){
+  if(!xlsxOK){ alert('Excel 库加载失败'); return; }
+  var example = [
+    '【示例】某文字商标（导入前请删除本行）',
+    '12345678',
+    '9',
+    '北方夜视科技（南京）研究院有限公司',
+    '2018-05-20',
+    '',
+    ''
+  ];
+  var ws = XLSX.utils.aoa_to_sheet([TM_COL_HEADERS, example]);
+  var range = XLSX.utils.decode_range(ws['!ref']);
+  for(var R = range.s.r; R <= range.e.r; R++){
+    var cellAddr = XLSX.utils.encode_cell({r:R, c:1});
+    if(ws[cellAddr]) ws[cellAddr].t = 's';
+  }
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '商标导入模板');
+  XLSX.writeFile(wb, '商标导入模板.xlsx');
+}
+async function processTmImportRows(rows){
+  if(rows.length < 2){ alert('文件内容为空或格式不对'); return; }
+  var header = rows[0].map(function(h){ return String(h == null ? '' : h).trim(); });
+  var items = [];
+  for(var i = 1; i < rows.length; i++){
+    var row = rows[i];
+    if(!row || !row.length) continue;
+    var allEmpty = row.every(function(c){ return c==null || String(c).trim()===''; });
+    if(allEmpty) continue;
+    var item = {};
+    header.forEach(function(h, idx){
+      var key = TM_HEADER_MAP[h];
+      if(key) item[key] = row[idx] == null ? '' : row[idx];
+    });
+    if((String(item.name||'')).indexOf('【示例】') === 0) continue;
+    items.push(item);
+  }
+  if(!items.length){ alert('没有可导入的数据'); return; }
+  if(!confirm('即将导入 ' + items.length + ' 件商标，确定吗？')) return;
+
+  var newCount = 0, updateCount = 0, unchangedCount = 0, fail = 0;
+  var firstErr = '';
+  var invalidRegDates = [], invalidLastRenewed = [], invalidClass = [];
+  var updateDetails = [];
+
+  for(var k = 0; k < items.length; k++){
+    var it = items[k];
+    var nm = String(it.name || '').trim();
+    var no = String(it.regNo || '').trim();
+    var cls = String(it.classNo || '').trim();
+    var cl = String(it.client || '').trim();
+    var rdRaw = it.regDate != null ? it.regDate : '';
+    if(!nm || !no || !cls || !cl || rdRaw === ''){ fail++; continue; }
+    var cNum = Number(cls);
+    if(isNaN(cNum) || cNum < 1 || cNum > 45 || String(cNum) !== cls.replace(/^0+/,'').replace(/^$/,'0')){
+      // 允许 "9" 或 "09" 都通过，只要数值 1-45
+    }
+    if(isNaN(cNum) || cNum < 1 || cNum > 45){
+      fail++;
+      if(invalidClass.length < 5) invalidClass.push(nm + ' (类别: "' + cls + '")');
+      continue;
+    }
+    cls = String(cNum);
+
+    var rd = parseDate(rdRaw);
+    if(!rd){
+      fail++;
+      if(invalidRegDates.length < 5) invalidRegDates.push(nm + ' (核准注册日: "' + rdRaw + '")');
+      continue;
+    }
+
+    var lastRaw = it.lastRenewedAt != null ? String(it.lastRenewedAt).trim() : '';
+    var lastStr = '';
+    if(lastRaw !== ''){
+      var lp = parseDate(lastRaw);
+      if(lp) lastStr = fmtDate(lp);
+      else { if(invalidLastRenewed.length < 5) invalidLastRenewed.push(nm + ' (上次续展日: "' + lastRaw + '")'); }
+    }
+
+    var newNotes = String(it.notes || '');
+    var newRegDate = fmtDate(rd);
+    var newExpDate = fmtDate(addYears(rd, 10));
+
+    var normNo = normAppNo(no);
+    var existing = null;
+    for(var ei = 0; ei < state.trademarks.length; ei++){
+      if(normAppNo(state.trademarks[ei].regNo) === normNo){ existing = state.trademarks[ei]; break; }
+    }
+
+    var id, changes = [];
+    var finalLast = lastStr;
+
+    if(existing){
+      id = existing.id;
+      if((existing.name||'') !== nm) changes.push({field:'商标名称', old:existing.name||'（空）', new_:nm});
+      if((existing.classNo||'') !== cls) changes.push({field:'类别', old:existing.classNo||'（空）', new_:cls});
+      if((existing.client||'') !== cl) changes.push({field:'客户', old:existing.client||'（空）', new_:cl});
+      if((existing.regDate||'') !== newRegDate){
+        changes.push({field:'核准注册日', old:existing.regDate||'（空）', new_:newRegDate});
+        changes.push({field:'到期日', old:existing.expiryDate||'（空）', new_:newExpDate});
+      }
+      // 上次续展日取大值（空视为最小）
+      var oldLast = existing.lastRenewedAt || '';
+      if(oldLast && lastStr && oldLast > lastStr) finalLast = oldLast;
+      else if(!lastStr) finalLast = oldLast;
+      if(oldLast !== finalLast) changes.push({field:'上次续展日', old:oldLast||'（空）', new_:finalLast||'（空）'});
+      if((existing.notes||'') !== newNotes) changes.push({field:'备注', old:(existing.notes||'（空）').slice(0,30), new_:(newNotes||'（空）').slice(0,30)});
+
+      var row2 = {
+        id:id, user_id:state.user.id,
+        name:nm, reg_no:no, class_no:cls, client:cl,
+        reg_date:newRegDate, expiry_date:newExpDate,
+        last_renewed_at:finalLast,
+        archived: existing.archived, archived_at: existing.archivedAt || '',
+        notes:newNotes, contact: existing.contact || '', phone: existing.phone || ''
+      };
+      var res = await sb.from('trademarks').upsert(row2, {onConflict:'id'});
+      if(res.error){ fail++; if(!firstErr) firstErr = res.error.message; continue; }
+      existing.name = nm; existing.regNo = no; existing.classNo = cls; existing.client = cl;
+      existing.regDate = newRegDate; existing.expiryDate = newExpDate; existing.lastRenewedAt = finalLast;
+      existing.notes = newNotes;
+
+      if(changes.length > 0){ updateCount++; updateDetails.push({name:nm, regNo:no, changes:changes}); }
+      else unchangedCount++;
+    } else {
+      id = it.id || ('T' + Date.now() + Math.random().toString(36).slice(2,7) + k);
+      var row3 = {
+        id:id, user_id:state.user.id,
+        name:nm, reg_no:no, class_no:cls, client:cl,
+        reg_date:newRegDate, expiry_date:newExpDate,
+        last_renewed_at:lastStr,
+        archived:false, archived_at:'',
+        notes:newNotes, contact:'', phone:''
+      };
+      var res2 = await sb.from('trademarks').upsert(row3, {onConflict:'id'});
+      if(res2.error){ fail++; if(!firstErr) firstErr = res2.error.message; continue; }
+      newCount++;
+      state.trademarks.push({
+        id:id, name:nm, regNo:no, classNo:cls, client:cl,
+        regDate:newRegDate, expiryDate:newExpDate, lastRenewedAt:lastStr,
+        archived:false, archivedAt:'', notes:newNotes, contact:'', phone:''
+      });
+    }
+  }
+  await loadTrademarks(); renderAll();
+
+  var lines = ['商标导入完成','───────────────',
+    '· 新增：' + newCount + ' 件','· 覆盖更新：' + updateCount + ' 件'];
+  if(unchangedCount > 0) lines.push('· 无变化（跳过）：' + unchangedCount + ' 件');
+  if(fail > 0) lines.push('· 失败：' + fail + ' 件');
+  if(invalidRegDates.length){ lines.push(''); lines.push('⚠ 核准注册日无法识别：'); invalidRegDates.forEach(function(s){lines.push('  · '+s);}); }
+  if(invalidClass.length){ lines.push(''); lines.push('⚠ 类别号不合法（须为 1–45 整数）：'); invalidClass.forEach(function(s){lines.push('  · '+s);}); }
+  if(invalidLastRenewed.length){ lines.push(''); lines.push('⚠ 上次续展日无法识别（按空处理）：'); invalidLastRenewed.forEach(function(s){lines.push('  · '+s);}); }
+  if(firstErr){ lines.push(''); lines.push('首个错误：' + firstErr); }
+  if(updateDetails.length > 0){
+    lines.push(''); lines.push('━━━ 覆盖详情 ━━━');
+    var showMax = Math.min(updateDetails.length, 20);
+    for(var ui=0; ui<showMax; ui++){
+      var u = updateDetails[ui];
+      lines.push((ui+1) + '. ' + u.name + ' (' + u.regNo + ')');
+      u.changes.forEach(function(ch){ lines.push('   · ' + ch.field + '：' + ch.old + '  →  ' + ch.new_); });
+    }
+    if(updateDetails.length > showMax) lines.push('（还有 ' + (updateDetails.length - showMax) + ' 条覆盖未显示）');
+  }
+  alert(lines.join('\n'));
+}
+function importTmFile(file){
+  var fname = file.name.toLowerCase();
+  var reader = new FileReader();
+  if(fname.endsWith('.xlsx') || fname.endsWith('.xls')){
+    if(!xlsxOK){ alert('Excel 库加载失败'); return; }
+    reader.onload = async function(e){
+      try {
+        var data = new Uint8Array(e.target.result);
+        var wb = XLSX.read(data, {type:'array', cellDates:false, raw:false});
+        var sheet = wb.Sheets[wb.SheetNames[0]];
+        var rows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:false, defval:''});
+        await processTmImportRows(rows);
+      } catch(err){ alert('Excel 解析失败：' + (err.message || err)); }
+    };
+    reader.readAsArrayBuffer(file);
+  } else if(fname.endsWith('.json')){
+    reader.onload = async function(e){
+      try {
+        var data = JSON.parse(e.target.result);
+        var list = Array.isArray(data) ? data : (data.trademarks || []);
+        var header = TM_COL_HEADERS;
+        var rows = [header].concat(list.map(function(it){
+          return [it.name||'', it.regNo||it.reg_no||'', it.classNo||it.class_no||'',
+            it.client||'', it.regDate||it.reg_date||'',
+            it.lastRenewedAt||it.last_renewed_at||'', it.notes||''];
+        }));
+        await processTmImportRows(rows);
+      } catch(err){ alert('JSON 解析失败：' + (err.message || err)); }
+    };
+    reader.readAsText(file, 'UTF-8');
+  } else {
+    reader.onload = async function(e){
+      try { await processTmImportRows(parseCSV(e.target.result)); }
+      catch(err){ alert('CSV 解析失败：' + (err.message || err)); }
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+}
+function exportTrademarksXLSX(){
+  var header = ['商标名称','注册号','类别','客户','核准注册日','到期日','上次续展日','备注'];
+  var data=[header].concat(state.trademarks.map(function(t){
+    return [t.name, t.regNo, t.classNo, t.client, t.regDate, t.expiryDate, t.lastRenewedAt||'', t.notes||''];
+  }));
+  exportXLSX('商标数据_' + fmtDate(new Date()) + '.xlsx', data, '商标数据');
+}
+function exportTmScheduleXLSX(){
+  var header=['到期日','剩余天数','客户','商标名称','注册号','类别','状态','续展费','迟延费','合计'];
+  var rows=tmScheduleCache.map(function(it){
+    var fee = it.fee > 0 ? TM_RENEW_FEE : 0;
+    var late = it.code==='grace' ? TM_LATE_FEE : 0;
+    return [fmtDate(it.expiryDate), it.daysLeft, it.tm.client, it.tm.name, it.tm.regNo,
+      it.tm.classNo, it.label, fee, late, fee+late];
   });
-  exportXLSX('缴费计划_' + fmtDate(new Date()) + '.xlsx', [header].concat(rows), '缴费计划');
+  exportXLSX('商标续展计划_' + fmtDate(new Date()) + '.xlsx', [header].concat(rows), '续展计划');
 }
 
-/* =========================================================
-   导出报表：包含当前年和下一年的全部数据
-   ========================================================= */
-function exportReportXLSX(){
-  var today=startOfDay(new Date());
-  var year=Number(document.getElementById('reportYear').value);
-  var fClient=document.getElementById('reportClient').value;
-
-  var allItems=[];
-  monitored().forEach(function(p){
-    var info=nextDueInfo(p,today);
-    if(info) allItems.push(Object.assign({}, info, {patent:p}));
+/* ==================== 模块切换 ==================== */
+function switchModule(mod){
+  currentModule = mod;
+  try { localStorage.setItem('ip_module', mod); } catch(e){}
+  document.querySelectorAll('#moduleSwitch button').forEach(function(b){
+    b.classList.toggle('active', b.dataset.module === mod);
   });
-  if(fClient) allItems=allItems.filter(function(it){return it.patent.client===fClient;});
-
-  var targetYears = [year, year+1];
-  var items = allItems.filter(function(it){
-    var d=parseDate(it.dueDate);
-    return d && targetYears.indexOf(d.getFullYear())>=0;
-  }).sort(function(a,b){return parseDate(a.dueDate)-parseDate(b.dueDate);});
-
-  var header=['日历年份','季度','缴费截止日','客户','专利名称','申请号','类型','专利年度','官费标准','减免比例','应缴年费','滞纳金','合计'];
-  var rows=items.map(function(it){
-    var d=parseDate(it.dueDate);
-    return [
-      d.getFullYear(),
-      'Q'+(Math.floor(d.getMonth()/3)+1),
-      it.dueDate,
-      it.patent.client,
-      it.patent.name,
-      it.patent.appNo,
-      it.patent.type,
-      '第'+it.year+'年',
-      it.baseFee,
-      it.reduction>0?it.reduction+'%':'0',
-      it.fee,
-      it.lateFee,
-      it.total
-    ];
-  });
-  exportXLSX('周期报表_' + year + '-' + (year+1) + '.xlsx', [header].concat(rows), '周期报表');
+  document.getElementById('module-patent').style.display = mod === 'patent' ? '' : 'none';
+  document.getElementById('module-trademark').style.display = mod === 'trademark' ? '' : 'none';
 }
+
+/* ==================== 事件绑定 ==================== */
 function bindEvents(){
+  // 认证
   document.getElementById('authSubmit').addEventListener('click',handleAuth);
   document.getElementById('authToggleLink').addEventListener('click',function(){
     setAuthMode(authMode==='login'?'signup':'login');
@@ -1747,19 +2799,36 @@ function bindEvents(){
     if(e.key==='Enter') handleAuth();
   });
   document.getElementById('btnLogout').addEventListener('click',logout);
+
+  // 模块切换
+  document.querySelectorAll('#moduleSwitch button').forEach(function(b){
+    b.addEventListener('click',function(){ switchModule(b.dataset.module); });
+  });
+
+  // 通用 tab
   document.querySelectorAll('.tab').forEach(function(tab){
     tab.addEventListener('click',function(){
-      document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-      document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+      var wrapper = tab.closest('[id^="module-"]');
+      if(!wrapper) return;
+      wrapper.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+      wrapper.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
       tab.classList.add('active');
-      document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
-      var t=tab.dataset.tab;
+      var panel = wrapper.querySelector('#panel-' + tab.dataset.tab);
+      if(panel) panel.classList.add('active');
+      var t = tab.dataset.tab;
       if(t==='dashboard') renderDashboard();
       if(t==='ledger') renderLedger();
       if(t==='schedule') renderSchedule();
       if(t==='report') renderReport();
+      if(t==='tm-dashboard') renderTmDashboard();
+      if(t==='tm-ledger') renderTmLedger();
+      if(t==='tm-schedule') renderTmSchedule();
+      if(t==='tm-report') renderTmReport();
+      if(t==='tm-client') renderTmClientReport();
     });
   });
+
+  // ============ 专利模块事件 ============
   document.getElementById('btnAdd').addEventListener('click',function(){openPatentModal(null);});
   document.getElementById('btnTemplate').addEventListener('click',downloadTemplate);
   document.getElementById('btnExportAll').addEventListener('click',exportPatentsXLSX);
@@ -1809,11 +2878,150 @@ function bindEvents(){
   });
   document.getElementById('scheduleRange').addEventListener('change',renderSchedule);
   document.getElementById('scheduleClient').addEventListener('change',renderSchedule);
-  document.getElementById('btnExportSchedule').addEventListener('click',exportScheduleXLSX);
+  document.getElementById('btnExportSchedule').addEventListener('click',function(){
+    var header=['缴费截止日','剩余天数','客户','专利名称','申请号','类型','年度','官费标准','减免比例','应缴年费','滞纳金','合计'];
+    var rows=scheduleCache.map(function(it){
+      return [it.dueDate,it.daysLeft,it.patent.client,it.patent.name,it.patent.appNo,it.patent.type,
+        '第'+it.year+'年',it.baseFee,it.reduction>0?it.reduction+'%':'0',it.fee,it.lateFee,it.total];
+    });
+    exportXLSX('缴费计划_' + fmtDate(new Date()) + '.xlsx', [header].concat(rows), '缴费计划');
+  });
   document.getElementById('reportYear').addEventListener('change',renderReport);
   document.getElementById('reportClient').addEventListener('change',renderReport);
-  document.getElementById('btnExportReport').addEventListener('click',exportReportXLSX);
+  document.getElementById('btnExportReport').addEventListener('click',function(){
+    var today=startOfDay(new Date());
+    var year=Number(document.getElementById('reportYear').value);
+    var fClient=document.getElementById('reportClient').value;
+    var items=[];
+    monitored().forEach(function(p){
+      var info=nextDueInfo(p,today);
+      if(info) items.push(Object.assign({}, info, {patent:p}));
+    });
+    if(fClient) items=items.filter(function(it){return it.patent.client===fClient;});
+    var targetYears=[year, year+1];
+    items=items.filter(function(it){
+      var d=parseDate(it.dueDate);
+      return d && targetYears.indexOf(d.getFullYear())>=0;
+    }).sort(function(a,b){return parseDate(a.dueDate)-parseDate(b.dueDate);});
+    var header=['日历年份','季度','缴费截止日','客户','专利名称','申请号','类型','专利年度','官费标准','减免比例','应缴年费','滞纳金','合计'];
+    var rows=items.map(function(it){
+      var d=parseDate(it.dueDate);
+      return [d.getFullYear(),'Q'+(Math.floor(d.getMonth()/3)+1),it.dueDate,
+        it.patent.client,it.patent.name,it.patent.appNo,it.patent.type,'第'+it.year+'年',
+        it.baseFee,it.reduction>0?it.reduction+'%':'0',it.fee,it.lateFee,it.total];
+    });
+    exportXLSX('周期报表_' + year + '-' + (year+1) + '.xlsx', [header].concat(rows), '周期报表');
+  });
   document.getElementById('btnConfirmBulkPaid').addEventListener('click',confirmBulkPaid);
+  document.getElementById('btnSavePatent').addEventListener('click',savePatent);
+
+  // ============ 商标模块事件 ============
+  document.getElementById('tmBtnAdd').addEventListener('click',function(){openTrademarkModal(null);});
+  document.getElementById('tmBtnTemplate').addEventListener('click',downloadTrademarkTemplate);
+  document.getElementById('tmBtnExportAll').addEventListener('click',exportTrademarksXLSX);
+  document.getElementById('tmBtnImport').addEventListener('click',function(){document.getElementById('tmFileInput').click();});
+  document.getElementById('tmFileInput').addEventListener('change',function(e){
+    if(e.target.files[0]) importTmFile(e.target.files[0]); e.target.value='';
+  });
+  document.getElementById('tmAlertHorizon').addEventListener('change',function(e){
+    state.settings.tmAlertHorizon=Number(e.target.value); renderTmDashboard();
+  });
+  document.querySelectorAll('#tmLedgerScope .seg-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('#tmLedgerScope .seg-btn').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active'); tmLedgerScope=btn.dataset.scope;
+      clearTmSelection(); renderTmLedger();
+    });
+  });
+  ['tmSearch','tmClient','tmClass','tmStatus','tmExpiryFrom','tmExpiryTo'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener(id==='tmSearch'?'input':'change', renderTmLedger);
+  });
+  document.getElementById('tmBtnResetFilters').addEventListener('click',function(){
+    document.getElementById('tmSearch').value='';
+    ['tmClient','tmClass','tmStatus','tmExpiryFrom','tmExpiryTo'].forEach(function(id){
+      document.getElementById(id).value='';
+    });
+    clearTmSelection(); renderTmLedger();
+  });
+  document.getElementById('tmCheckAll').addEventListener('change',function(e){
+    var checked=e.target.checked;
+    document.querySelectorAll('#tmLedgerBody .tm-row-check').forEach(function(cb){
+      cb.checked=checked;
+      if(checked) tmSelectedIds.add(cb.dataset.id); else tmSelectedIds.delete(cb.dataset.id);
+      cb.closest('tr').classList.toggle('selected',checked);
+    });
+    updateTmBulkBar();
+  });
+  document.getElementById('tmBulkArchive').addEventListener('click',tmBulkArchive);
+  document.getElementById('tmBulkRestore').addEventListener('click',tmBulkRestore);
+  document.getElementById('tmBulkRenew').addEventListener('click',tmBulkRenew);
+  document.getElementById('tmBulkExport').addEventListener('click',tmBulkExport);
+  document.getElementById('tmBulkDelete').addEventListener('click',tmBulkDelete);
+  document.getElementById('tmBulkClear').addEventListener('click',function(){
+    clearTmSelection();
+    document.querySelectorAll('#tmLedgerBody tr').forEach(function(tr){tr.classList.remove('selected');});
+    document.querySelectorAll('#tmLedgerBody .tm-row-check').forEach(function(cb){cb.checked=false;});
+    updateTmBulkBar();
+  });
+  document.getElementById('tmScheduleRange').addEventListener('change',renderTmSchedule);
+  document.getElementById('tmScheduleClient').addEventListener('change',renderTmSchedule);
+  document.getElementById('tmBtnExportSchedule').addEventListener('click',exportTmScheduleXLSX);
+  document.getElementById('tmReportYear').addEventListener('change',renderTmReport);
+  document.getElementById('tmReportClient').addEventListener('change',renderTmReport);
+  document.getElementById('tmBtnExportReport').addEventListener('click',function(){
+    var today=startOfDay(new Date());
+    var year=Number(document.getElementById('tmReportYear').value);
+    var fClient=document.getElementById('tmReportClient').value;
+    var allItems=[];
+    tmMonitored().forEach(function(t){
+      allItems.push(Object.assign({}, tmStatus(t, today), {tm:t}));
+    });
+    if(fClient) allItems = allItems.filter(function(it){return it.tm.client===fClient;});
+    var targetYears=[year, year+1, year+2, year+3, year+4];
+    var items = allItems.filter(function(it){
+      var d = parseDate(it.expiryDate);
+      return d && targetYears.indexOf(d.getFullYear())>=0;
+    }).sort(function(a,b){return parseDate(a.expiryDate)-parseDate(b.expiryDate);});
+    var header=['日历年份','到期日','客户','商标名称','注册号','类别','状态','续展费','迟延费','合计'];
+    var rows=items.map(function(it){
+      var d=parseDate(it.expiryDate);
+      var fee = it.fee > 0 ? TM_RENEW_FEE : 0;
+      var late = it.code==='grace' ? TM_LATE_FEE : 0;
+      return [d.getFullYear(), fmtDate(it.expiryDate), it.tm.client, it.tm.name, it.tm.regNo,
+        it.tm.classNo, it.label, fee, late, fee+late];
+    });
+    exportXLSX('商标续展报表_' + year + '-' + (year+4) + '.xlsx', [header].concat(rows), '续展报表');
+  });
+  document.getElementById('tmClientReportYear').addEventListener('change',renderTmClientReport);
+  document.getElementById('tmBtnExportClientReport').addEventListener('click',function(){
+    var today=startOfDay(new Date());
+    var year=Number(document.getElementById('tmClientReportYear').value);
+    var targetYears=[year, year+1, year+2];
+    var byClient = {};
+    tmMonitored().forEach(function(t){
+      var st = tmStatus(t, today);
+      var d = parseDate(t.expiryDate);
+      if(!d || targetYears.indexOf(d.getFullYear())<0) return;
+      var c = t.client || '（无客户）';
+      if(!byClient[c]) byClient[c] = [];
+      byClient[c].push(Object.assign({}, st, {tm:t}));
+    });
+    var header=['客户','到期日','商标名称','注册号','类别','状态','续展费','迟延费','合计'];
+    var rows=[];
+    Object.keys(byClient).sort().forEach(function(c){
+      byClient[c].sort(function(a,b){return parseDate(a.expiryDate)-parseDate(b.expiryDate);}).forEach(function(it){
+        var fee = it.fee > 0 ? TM_RENEW_FEE : 0;
+        var late = it.code==='grace' ? TM_LATE_FEE : 0;
+        rows.push([c, fmtDate(it.expiryDate), it.tm.name, it.tm.regNo, it.tm.classNo,
+          it.label, fee, late, fee+late]);
+      });
+    });
+    exportXLSX('客户维度报表_' + year + '-' + (year+2) + '.xlsx', [header].concat(rows), '客户报表');
+  });
+  document.getElementById('tmBtnSave').addEventListener('click',saveTrademark);
+
+  // 模态框通用
   document.querySelectorAll('[data-close]').forEach(function(b){
     b.addEventListener('click',function(){ b.closest('.overlay').classList.remove('show'); });
   });
@@ -1823,18 +3031,34 @@ function bindEvents(){
   document.addEventListener('keydown',function(e){
     if(e.key==='Escape') document.querySelectorAll('.overlay.show').forEach(function(o){o.classList.remove('show');});
   });
-  document.getElementById('btnSavePatent').addEventListener('click',savePatent);
 }
+
+/* ==================== 渲染所有 ==================== */
 function renderAll(){
   renderClientOptions();
   renderDashboard();
   renderLedger();
   renderSchedule();
   renderReport();
+  renderTmDashboard();
+  renderTmLedger();
+  renderTmSchedule();
+  renderTmReport();
+  renderTmClientReport();
 }
+
+/* ==================== 初始化 ==================== */
 (async function init(){
   bindEvents();
   setAuthMode('login');
+
+  // 恢复上次所在模块
+  try {
+    var savedMod = localStorage.getItem('ip_module');
+    if(savedMod === 'trademark') switchModule('trademark');
+    else switchModule('patent');
+  } catch(e){ switchModule('patent'); }
+
   if(!sdkOK){
     var sub=document.getElementById('authSub');
     sub.innerHTML='❌ 无法加载 Supabase 库<br>请关闭浏览器的防追踪功能后刷新页面';
@@ -1847,16 +3071,18 @@ function renderAll(){
   if(sess.data.session && sess.data.session.user){
     showApp(sess.data.session.user);
     await loadPatents();
+    await loadTrademarks();
     renderAll();
   }
   sb.auth.onAuthStateChange(async function(event, session){
     if(event==='SIGNED_IN' && session && session.user){
       showApp(session.user);
       await loadPatents();
+      await loadTrademarks();
       renderAll();
     }
     if(event==='SIGNED_OUT'){
-      state.user=null; state.patents=[];
+      state.user=null; state.patents=[]; state.trademarks=[];
       document.getElementById('app').classList.remove('ready');
       document.getElementById('authScreen').style.display='flex';
       document.getElementById('authPassword').value='';
