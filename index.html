@@ -403,38 +403,103 @@ tbody tr.row-renewable:hover{background:#fef3c7!important}
       <div class="card">
         <div class="card-head"><h3>📐 专利年费规则</h3></div>
         <div class="card-body rules">
-          <h4>一、专利年度</h4>
-          <p>自申请日起算，第 N 年度 = <code>申请日 + (N-1) 年</code> 至 <code>申请日 + N 年 - 1 天</code>。</p>
-          <h4>二、缴费截止日</h4>
-          <p>年费应当在上一年度期满前缴纳，<b>缴费期限届满日 = 申请日在该年的对应日</b>。</p>
-          <h4>三、滞纳金</h4>
-          <p>逾期 6 个月宽限期内，每超 1 个月加收当年全额年费的 <b>5%</b>（最高 25%）。超 6 个月未缴，专利权终止。</p>
-          <h4>四、费减政策</h4>
-          <p>小微企业减 70%，个人减 85%。<b>减免覆盖：自授权当年起 10 个专利年度</b>。</p>
-          <p><b>授权日为空 → 视为不享受减免。</b></p>
-          <h4>五、保护年限上限</h4>
-          <p>发明 20 年，实用新型 10 年，外观设计 15 年。</p>
-          <h4>六、年费标准（元/年）</h4>
-          <table style="margin-top:8px;font-size:14px">
-            <thead><tr><th>类型</th><th>年度区间</th><th>标准</th></tr></thead>
-            <tbody>
-              <tr><td rowspan="6">发明</td><td>1–3</td><td class="num">900</td></tr>
-              <tr><td>4–6</td><td class="num">1,200</td></tr>
-              <tr><td>7–9</td><td class="num">2,000</td></tr>
-              <tr><td>10–12</td><td class="num">4,000</td></tr>
-              <tr><td>13–15</td><td class="num">6,000</td></tr>
-              <tr><td>16–20</td><td class="num">8,000</td></tr>
-              <tr><td rowspan="4">实用新型</td><td>1–3</td><td class="num">600</td></tr>
-              <tr><td>4–5</td><td class="num">900</td></tr>
-              <tr><td>6–8</td><td class="num">1,200</td></tr>
-              <tr><td>9–10</td><td class="num">2,000</td></tr>
-              <tr><td rowspan="5">外观设计</td><td>1–3</td><td class="num">600</td></tr>
-              <tr><td>4–5</td><td class="num">900</td></tr>
-              <tr><td>6–8</td><td class="num">1,200</td></tr>
-              <tr><td>9–10</td><td class="num">2,000</td></tr>
-              <tr><td>11–15</td><td class="num">3,000</td></tr>
-            </tbody>
-          </table>
+        <h4>一、专利年度定义</h4>
+        <p>专利年度自<b>申请日</b>起算，与授权日无关。</p>
+  <ul>
+      <li><b>第 N 年度</b> = <code>申请日 + (N-1) 年</code> 至 <code>申请日 + N 年 - 1 天</code></li>
+      </ul>
+      <p><b>举例：</b>申请日 2021-06-25</p>
+      <ul>
+      <li>第 1 年度：2021-06-25 ~ 2022-06-24</li>
+      <li>第 2 年度：2022-06-25 ~ 2023-06-24</li>
+      <li>第 5 年度：2025-06-25 ~ 2026-06-24</li>
+      <li>第 6 年度：2026-06-25 ~ 2027-06-24</li>
+    </ul>
+  
+  <h4>二、缴费截止日</h4>
+  <p>年费应当在<b>上一年度期满前</b>缴纳，即<b>缴费期限届满日 = 申请日在该年的对应日</b>。</p>
+  <p><b>举例：</b>申请日 2021-06-25，则第 6 年度的缴费截止日 = <b>2026-06-25</b>。</p>
+
+  <h4>三、滞纳金规则（重要）</h4>
+  <p>逾期后可在 <b>6 个月宽限期</b>内补缴，每超过 1 个月加收<b>当年全额标准年费</b>的 <b>5%</b>，最高 25%。</p>
+  <div class="note">
+    ⚠️ <b>滞纳金计算基数 = 标准年费（不减免费），不是减免后的应缴年费。</b><br>
+    <b>应缴总额 = 减免后年费 + 滞纳金（标准年费 × 费率）</b>
+  </div>
+  <table style="margin-top:8px;font-size:14px">
+    <thead><tr><th>逾期月数</th><th>滞纳金费率</th><th>示例（标准 1200 元）</th></tr></thead>
+    <tbody>
+      <tr><td>未逾期</td><td class="num">0%</td><td class="num">0</td></tr>
+      <tr><td>逾期 1 个月</td><td class="num">5%</td><td class="num">60</td></tr>
+      <tr><td>逾期 2 个月</td><td class="num">10%</td><td class="num">120</td></tr>
+      <tr><td>逾期 3 个月</td><td class="num">15%</td><td class="num">180</td></tr>
+      <tr><td>逾期 4 个月</td><td class="num">20%</td><td class="num">240</td></tr>
+      <tr><td>逾期 5 个月</td><td class="num">25%</td><td class="num">300</td></tr>
+      <tr><td>逾期 6 个月及以上</td><td colspan="2" style="color:#dc2626;font-weight:700">专利权终止，无法补缴</td></tr>
+    </tbody>
+  </table>
+  <p><b>综合示例：</b>申请日 2021-06-25，授权日 2022-10-28，减缴 85%，已缴至第 5 年度，当前日期 2026-09-27。</p>
+  <ul>
+    <li>第 6 年度标准年费 = <code>1200 元</code></li>
+    <li>第 6 年度减免后应缴年费 = <code>1200 × (1 − 85%) = 180 元</code></li>
+    <li>缴费截止日 = 2026-06-25，当前已逾期 3 个月</li>
+    <li>滞纳金 = <code>1200 × (3 × 5%) = 180 元</code>（按标准年费计）</li>
+    <li><b>应缴总额 = 180 + 180 = 360 元</b></li>
+  </ul>
+
+  <h4>四、费减政策</h4>
+  <ul>
+    <li>小微企业减 <b>70%</b>，个人减 <b>85%</b>。</li>
+    <li>减免覆盖范围：<b>自授权当年起连续 10 个专利年度</b>。</li>
+    <li><b>授权日为空 → 视为不享受减免。</b></li>
+    <li>「授权当年」按专利年度计算，即授权日所在的专利年度。</li>
+  </ul>
+  <p><b>举例：</b>申请日 2021-06-25，授权日 2022-10-28，则授权当年 = 第 2 年度，费减覆盖第 2–11 年度。</p>
+
+  <h4>五、保护年限上限</h4>
+  <ul>
+    <li>发明：<b>20 年</b></li>
+    <li>实用新型：<b>10 年</b></li>
+    <li>外观设计：<b>15 年</b></li>
+  </ul>
+  <p>超过上限的专利年度不再需要缴纳年费。</p>
+
+  <h4>六、年费标准（元/年，标准全额）</h4>
+  <table style="margin-top:8px;font-size:14px">
+    <thead><tr><th>类型</th><th>年度区间</th><th>标准年费</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="6">发明</td><td>第 1–3 年</td><td class="num">900</td></tr>
+      <tr><td>第 4–6 年</td><td class="num">1,200</td></tr>
+      <tr><td>第 7–9 年</td><td class="num">2,000</td></tr>
+      <tr><td>第 10–12 年</td><td class="num">4,000</td></tr>
+      <tr><td>第 13–15 年</td><td class="num">6,000</td></tr>
+      <tr><td>第 16–20 年</td><td class="num">8,000</td></tr>
+      <tr><td rowspan="4">实用新型</td><td>第 1–3 年</td><td class="num">600</td></tr>
+      <tr><td>第 4–5 年</td><td class="num">900</td></tr>
+      <tr><td>第 6–8 年</td><td class="num">1,200</td></tr>
+      <tr><td>第 9–10 年</td><td class="num">2,000</td></tr>
+      <tr><td rowspan="5">外观设计</td><td>第 1–3 年</td><td class="num">600</td></tr>
+      <tr><td>第 4–5 年</td><td class="num">900</td></tr>
+      <tr><td>第 6–8 年</td><td class="num">1,200</td></tr>
+      <tr><td>第 9–10 年</td><td class="num">2,000</td></tr>
+      <tr><td>第 11–15 年</td><td class="num">3,000</td></tr>
+    </tbody>
+  </table>
+
+  <h4>七、已缴年度维护</h4>
+  <ul>
+    <li>台账中每件专利的<b>已缴年度</b>表示最近已完成缴纳的专利年度。</li>
+    <li>已缴年度 = N 表示第 1 至第 N 年度均已缴清，系统自动从第 N+1 年度开始计算下一笔应缴。</li>
+    <li>可在台账中直接编辑，或在「缴费计划」「看板」中点击「标记已缴」。</li>
+    <li>在详情时间轴中可对任意年度执行「标记已缴 / 撤销已缴」。</li>
+  </ul>
+
+  <h4>八、归档与恢复</h4>
+  <ul>
+    <li><b>归档</b>：不再监控，记录保留，不参与任何提醒与报表计算。</li>
+    <li><b>恢复监控</b>：重新参与提醒与报表。</li>
+    <li>状态改为「放弃监控」时会自动归档。</li>
+    </ul>
         </div>
       </div>
     </section>
@@ -592,14 +657,22 @@ tbody tr.row-renewable:hover{background:#fef3c7!important}
         <div class="card-body rules">
           <h4>一、注册商标有效期</h4>
           <p>注册商标有效期为 <b>10 年</b>，自核准注册之日起计算。</p>
-          <p><b>专用权到期日 = 核准注册日 + 10 年</b></p>
+  <p><b>专用权到期日 = 核准注册日 + 10 年</b>（同日）</p>
+  <p><b>举例：</b>核准注册日 2018-05-20 → 到期日 2028-05-20。</p>
 
           <h4>二、续展时间节点</h4>
-          <p>根据《商标法》第 40 条，注册商标有效期满需要继续使用的，应当在期满前 <b>12 个月内</b>办理续展手续。</p>
-          <ul>
-            <li><b>续展期开始日</b> = 到期日 - 12 个月（最早可提交续展日期）</li>
-            <li><b>宽展期结束日</b> = 到期日 + 6 个月（最后救命期限）</li>
-          </ul>
+         <p>根据《商标法》第 40 条，注册商标有效期满需要继续使用的，应当在期满前 <b>12 个月内</b>办理续展手续。</p>
+  <ul>
+    <li><b>续展期开始日</b> = 到期日 − 12 个月（最早可提交续展日期）</li>
+    <li><b>专用权到期日</b> = 核准注册日 + 10 年</li>
+    <li><b>宽展期结束日</b> = 到期日 + 6 个月（最后救命期限）</li>
+  </ul>
+  <p><b>举例：</b>到期日 2028-05-20</p>
+  <ul>
+    <li>续展期开始：2027-05-20</li>
+    <li>到期日：2028-05-20</li>
+    <li>宽展期结束：2028-11-20</li>
+  </ul>
 
           <h4>三、四个状态</h4>
           <table style="margin-top:8px;font-size:14px">
@@ -629,7 +702,10 @@ tbody tr.row-renewable:hover{background:#fef3c7!important}
           <div class="note">⚠️ 即使拖到宽展期最后一天提交，新的到期日仍按旧到期日 + 10 年计算，中间拖延的时间不补。</div>
 
           <h4>六、归档</h4>
-          <p>不再续展的商标直接归档，记录保留但不参与提醒。可随时恢复监控。</p>
+          <ul>
+    <li><b>归档</b>：不再续展的商标直接归档，记录保留但不参与提醒与报表。</li>
+    <li><b>恢复监控</b>：可随时恢复，重新参与提醒与报表。</li>
+         </ul>
 
           <h4>七、导入导出与去重规则</h4>
           <p>支持 <b>Excel（.xlsx / .xls）</b> 和 CSV 两种格式。</p>
@@ -897,7 +973,7 @@ function nextDueInfo(p, asOf){
     var f=feeForYear(p,n);
     if(f==null){ n++; continue; }
     var daysLeft=daysBetween(asOf, due);
-    var late=calcLate(fmtDate(due), f.fee, asOf);
+    var late=calcLate(fmtDate(due), f.base, asOf);
     return {year:n, dueDate:fmtDate(due), baseFee:f.base, reduction:f.reduction, fee:f.fee,
       daysLeft:daysLeft, lateMonths:late.months, lateFee:late.amount, terminated:late.terminated,
       total:f.fee+late.amount};
@@ -1546,7 +1622,7 @@ function openDetail(id){
       var due=start;
       var paid = n<=currentPaid;
       var isNext = n===currentPaid+1 && currentPaid+1<=max;
-      var late = !paid && due && today>due ? calcLate(fmtDate(due), f.fee, today) : null;
+      var late = !paid && due && today>due ? calcLate(fmtDate(due), f.base, today) : null;
       var cls = paid ? 'done' : (isNext ? (late&&late.months>0?'danger':'active') : '');
       var tag = paid ? '<span class="badge green">已缴</span>' : isNext ?
         (late&&late.months>0?'<span class="badge red">逾期 '+late.months+' 月</span>':'<span class="badge blue">待缴</span>')
